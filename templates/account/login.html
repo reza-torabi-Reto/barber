@@ -1,0 +1,16 @@
+<!-- account/templates/account/login.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ورود</title>
+</head>
+<body>
+    <h1>ورود به سیستم</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">ورود</button>
+    </form>
+    <p>حساب ندارید؟ <a href="{% url 'account:manager_signup' %}">ثبت‌نام کنید</a></p>
+</body>
+</html>

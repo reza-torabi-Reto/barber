@@ -1,0 +1,16 @@
+<!-- salon/templates/salon/create_shop.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ایجاد آرایشگاه جدید</title>
+</head>
+<body>
+    <h1>ایجاد آرایشگاه جدید</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">ثبت</button>
+    </form>
+    <a href="{% url 'account:profile_manager' %}">بازگشت به لیست آرایشگاه‌ها</a>
+</body>
+</html>

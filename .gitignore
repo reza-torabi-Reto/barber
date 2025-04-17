@@ -1,0 +1,31 @@
+# .gitignore
+# فایل‌های محیط مجازی
+venv/
+env/
+barber_env/
+*.venv/
+
+# فایل‌های پایتون
+__pycache__/
+*.py[cod]
+*.pyc
+
+# فایل‌های دیتابیس
+*.sqlite3
+
+# فایل‌های موقت و لاگ‌ها
+*.log
+*.pot
+*.pyc
+*.pyo
+
+# فایل‌های IDE
+.idea/
+.vscode/
+
+# فایل‌های استاتیک و مدیا (اگه آپلود شدن به صورت محلی)
+staticfiles/
+media/
+
+# فایل‌های حساس
+.env

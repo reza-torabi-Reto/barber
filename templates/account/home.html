@@ -1,0 +1,14 @@
+<!-- account/templates/account/home.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>صفحه اصلی</title>
+</head>
+<body>
+    <h1>به سیستم آرایشگاه خوش آمدید</h1>
+    <p>لطفاً نقش خود را انتخاب کنید:</p>
+    <a href="{% url 'account:manager_signup' %}">ثبت‌نام به عنوان مدیر</a><br>
+    <a href="{% url 'account:customer_signup' %}">ثبت‌نام به عنوان مشتری</a><br>
+    <a href="{% url 'account:login' %}">ورود</a>
+</body>
+</html>

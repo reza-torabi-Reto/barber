@@ -1,0 +1,24 @@
+<!-- salon/service_list.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>خدمات {{ shop.name }}</title>
+</head>
+<body>
+    <h1>خدمات {{ shop.name }}</h1>
+    <a href="{% url 'salon:create_service' shop.id %}">ثبت خدمت جدید</a>
+    <br><br>
+    
+    {% if services %}
+        <ul>
+        {% for service in services %}
+            <li>{{ service.name }} - مدت زمان: {{ service.duration }} دقیقه - قیمت: {{ service.price }} تومان</li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>در حال حاضر خدمتی برای این آرایشگاه ثبت نشده است.</p>
+    {% endif %}
+    
+    <a href="{% url 'salon:shop_list' %}">بازگشت به لیست آرایشگاه‌ها</a>
+</body>
+</html>

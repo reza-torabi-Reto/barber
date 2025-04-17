@@ -1,0 +1,21 @@
+Do:
+- create manager -> ok
+- login manager -> ok
+- create shop ->  ok
+- list shop -> ok
+- create barber -> ok
+- list barber -> ok
+- create service -> ok
+- list service -> ok
+- create customer -> ok
+- join shop to customer -> ok
+- leave shop from customer - > ok
+
+manager:
+username - password - nikname - avatar - phone - email - about - role - status
+
+barber:
+username - password - nikname - avatar - phone - email - about - role - status - shop
+
+customer:
+username - password - nikname - phone - role - status

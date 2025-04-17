@@ -1,0 +1,17 @@
+<!-- salon/create_barber.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ثبت آرایشگر جدید برای {{ shop.name }}</title>
+</head>
+<body>
+    <h1>{{shop.manager}}</h1>
+    <h1>ثبت آرایشگر جدید برای {{ shop.name }} - {{shop.referral_code}}</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">ثبت آرایشگر</button>
+    </form>
+    <a href="{% url 'salon:shop_list' %}">بازگشت به لیست آرایشگاه‌ها</a>
+</body>
+</html>
