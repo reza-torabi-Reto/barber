@@ -47,13 +47,13 @@
             <li>
                 {{ customer_shop.shop.name }} (کد: {{ customer_shop.shop.referral_code }}) - عضویت از: {{ customer_shop.joined_at }}
                 <a href="{% url 'account:leave_shop' customer_shop.shop.id %}">لغو عضویت</a>|
+                <a href="{% url 'salon:book_appointment' %}">نوبت</a>
             </li>
         {% endfor %}
         </ul>
     {% else %}
         <p>شما هنوز عضو هیچ آرایشگاهی نشده‌اید.</p>
     {% endif %}
-    <a href="{% url 'salon:book_appointment' %}">نوبت</a>
 
     <form method="post" action="{% url 'account:logout' %}">
         {% csrf_token %}
