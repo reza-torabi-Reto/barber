@@ -7,8 +7,14 @@
 <body>
     <h1>پروفایل شما</h1>
     <p>خوش آمدید، {{ user.username }}!</p>
-    <p>نقش: {{ user.role }}</p>
-    <p>شماره تلفن: {{ user.phone }}</p>
+    <p>نام: {{ user.first_name|default:"ثبت نشده" }}</p>
+    <p>نام خانوادگی: {{ user.last_name|default:"ثبت نشده" }}</p>
+    <p>ایمیل: {{ user.email|default:"ثبت نشده" }}</p>
+    <p>نقش: {{ user.role|default:"-" }}</p>
+    <p>شماره تلفن: {{ user.phone|default:"ثبت نشده" }}</p>
+
+    <a href="{% url 'account:edit_customer_profile' %}">ویرایش پروفایل</a>
+    <br><br>
 
     <h2>جستجوی آرایشگاه</h2>
     <form method="get">
@@ -38,15 +44,20 @@
     {% if customer_shops %}
         <ul>
         {% for customer_shop in customer_shops %}
-            <li>{{ customer_shop.shop.name }} (کد: {{ customer_shop.shop.referral_code }}) - عضویت از: {{ customer_shop.joined_at }}
-                | <a href="{% url 'account:leave_shop' customer_shop.shop.id %}">لغو عضویت</a>
+            <li>
+                {{ customer_shop.shop.name }} (کد: {{ customer_shop.shop.referral_code }}) - عضویت از: {{ customer_shop.joined_at }}
+                <a href="{% url 'account:leave_shop' customer_shop.shop.id %}">لغو عضویت</a>|
             </li>
         {% endfor %}
         </ul>
     {% else %}
         <p>شما هنوز عضو هیچ آرایشگاهی نشده‌اید.</p>
     {% endif %}
+    <a href="{% url 'salon:book_appointment' %}">نوبت</a>
 
-    <a href="{% url 'account:logout' %}">خروج</a>
+    <form method="post" action="{% url 'account:logout' %}">
+        {% csrf_token %}
+        <button type="submit">خروج</button>
+    </form>
 </body>
 </html>

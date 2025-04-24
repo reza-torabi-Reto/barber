@@ -29,9 +29,9 @@ ALLOWED_HOSTS = []
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
-LOGIN_REDIRECT_URL = 'account:profile_manager'
+# LOGOUT_REDIRECT_URL = 'account:home'
 LOGIN_URL = 'account:login'
-AUTH_USER_MODEL = 'account.UserProfile'
+AUTH_USER_MODEL = 'account.CustomUser'
 # Application definition
 
 INSTALLED_APPS = [

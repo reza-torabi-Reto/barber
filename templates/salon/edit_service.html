@@ -1,17 +1,16 @@
-<!-- salon/create_service.html -->
+<!-- salon/templates/salon/edit_service.html -->
 <!DOCTYPE html>
 <html>
 <head>
-    <title>ثبت خدمت جدید برای {{ shop.name }}</title>
+    <title>ویرایش خدمت {{ service.name }}</title>
 </head>
 <body>
-    <h1>ثبت خدمت جدید برای {{ shop.name }}</h1>
+    <h1>ویرایش خدمت {{ service.name }} در {{ shop.name }}</h1>
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit">ثبت خدمت</button>
+        <button type="submit">ذخیره تغییرات</button>
     </form>
     <a href="{% url 'salon:manage_shop' shop.id %}">بازگشت به مدیریت آرایشگاه</a>
-
 </body>
 </html>

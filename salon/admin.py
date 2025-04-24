@@ -1,22 +1,24 @@
 from django.contrib import admin
-from .models import *
-
-admin.site.site_header = 'پنل مدیریت'
+from .models import Shop, Service, CustomerShop
 
 class ShopAdmin(admin.ModelAdmin):
-	list_display = ('manager', 'referral_code','name','status')
-	# list_filter = ('article__author', 'status')
-	# search_fields = ('content',)
-	# ordering = ['-status', '-created']
+    list_display = ('name', 'referral_code', 'manager', 'status')
+    list_filter = ('status',)
+    search_fields = ('name', 'referral_code', 'manager__username')
+    ordering = ('name',)
 
-
-admin.site.register(Shop, ShopAdmin)
+class ServiceAdmin(admin.ModelAdmin):
+    list_display = ('name', 'shop', 'duration', 'price')
+    list_filter = ('shop',)
+    search_fields = ('name', 'shop__name')
+    ordering = ('shop', 'name')
 
 class CustomerShopAdmin(admin.ModelAdmin):
-	list_display = ('customer', 'shop','joined_at')
-	# list_filter = ('article__author', 'status')
-	# search_fields = ('content',)
-	# ordering = ['-status', '-created']
+    list_display = ('customer', 'shop', 'joined_at')
+    list_filter = ('shop',)
+    search_fields = ('customer__username', 'shop__name')
+    ordering = ('joined_at',)
 
-
+admin.site.register(Shop, ShopAdmin)
+admin.site.register(Service, ServiceAdmin)
 admin.site.register(CustomerShop, CustomerShopAdmin)

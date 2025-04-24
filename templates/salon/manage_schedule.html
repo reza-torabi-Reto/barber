@@ -1,0 +1,59 @@
+<!-- templates/salon/manage_schedule.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>مدیریت تنظیمات آرایشگاه</title>
+</head>
+<body>
+    <h1>مدیریت تنظیمات آرایشگاه: {{ shop.name }}</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ formset.management_form }}
+        {% if formset.errors %}
+            <div style="color: red;">
+                <p>لطفاً خطاهای زیر را برطرف کنید:</p>
+                <ul>
+                    {% for form in formset %}
+                        {% for field, errors in form.errors.items %}
+                            <li>{{ form.instance.get_day_of_week_display }} - {{ field }}: {{ errors }}</li>
+                        {% endfor %}
+                        {% if form.non_field_errors %}
+                            <li>{{ form.instance.get_day_of_week_display }}: {{ form.non_field_errors }}</li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+        <table>
+            <thead>
+                <tr>
+                    <th>روز</th>
+                    <th>باز/بسته</th>
+                    <th>ساعت شروع</th>
+                    <th>ساعت پایان</th>
+                    <th>شروع استراحت</th>
+                    <th>پایان استراحت</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for form, schedule in form_schedule_pairs %}
+                    <tr>
+                        <td>{{ schedule.get_day_of_week_display }}</td>
+                        <td>{{ form.is_open }}</td>
+                        <td>{{ form.start_time }}</td>
+                        <td>{{ form.end_time }}</td>
+                        <td>{{ form.break_start }}</td>
+                        <td>{{ form.break_end }}</td>
+                    </tr>
+                    <!-- اضافه کردن فیلد id به صورت مخفی -->
+                    {{ form.id.as_hidden }}
+                    <!-- برای اطمینان از اینکه day_of_week به درستی ارسال بشه -->
+                    {{ form.day_of_week.as_hidden }}
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit">ذخیره تغییرات</button>
+    </form>
+    <a href="{% url 'salon:manage_shop' shop.id %}">بازگشت به مدیریت آرایشگاه</a>
+</body>
+</html>

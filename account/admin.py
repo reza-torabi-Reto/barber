@@ -1,65 +1,57 @@
-# account/admin.py
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import UserProfile, Manager, Barber, Customer
+from .models import CustomUser, ManagerProfile, BarberProfile, CustomerProfile
 
-# ادمین برای UserProfile (نمایش همه کاربران)
-@admin.register(UserProfile)
-class UserProfileAdmin(UserAdmin):
-    list_display = ('username', 'phone', 'role', 'status', 'is_active')
-    list_filter = ('role', 'status', 'is_active')
-    search_fields = ('username', 'phone')
+class CustomUserAdmin(UserAdmin):
+    list_display = ('username', 'role', 'phone', 'email', 'is_staff')
+    list_filter = ('role', 'is_staff')
+    search_fields = ('username', 'phone', 'email')
+    ordering = ('username',)
+
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
-        ('اطلاعات شخصی', {'fields': ('nickname', 'phone', 'email', 'avatar', 'about')}),
-        ('نقش و وضعیت', {'fields': ('role', 'status', 'shop')}),
-        ('دسترسی‌ها', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        ('اطلاعات شخصی', {'fields': ('first_name', 'last_name', 'email', 'phone')}),
+        ('نقش و دسترسی‌ها', {'fields': ('role', 'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        ('تاریخ‌ها', {'fields': ('last_login', 'date_joined')}),
     )
 
-# ادمین برای Manager
-@admin.register(Manager)
-class ManagerAdmin(UserProfileAdmin):
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.filter(role='manager')
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('username', 'password1', 'password2', 'role', 'phone', 'email'),
+        }),
+    )
 
-    def save_model(self, request, obj, form, change):
-        obj.role = 'manager'
-        super().save_model(request, obj, form, change)
+class ManagerProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'bio', 'has_avatar')
+    list_filter = ('user__role',)
+    search_fields = ('user__username', 'bio')
 
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        form.base_fields['role'].disabled = True  # غیرفعال کردن فیلد role
-        return form
+    def has_avatar(self, obj):
+        return bool(obj.avatar)
+    has_avatar.boolean = True
+    has_avatar.short_description = 'آواتار دارد؟'
 
-# ادمین برای Barber
-@admin.register(Barber)
-class BarberAdmin(UserProfileAdmin):
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.filter(role='barber')
+class BarberProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'shop', 'bio', 'has_avatar')
+    list_filter = ('user__role', 'shop')
+    search_fields = ('user__username', 'bio')
 
-    def save_model(self, request, obj, form, change):
-        obj.role = 'barber'
-        super().save_model(request, obj, form, change)
+    def has_avatar(self, obj):
+        return bool(obj.avatar)
+    has_avatar.boolean = True
+    has_avatar.short_description = 'آواتار دارد؟'
 
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        form.base_fields['role'].disabled = True  # غیرفعال کردن فیلد role
-        return form
+class CustomerProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'phone')
+    list_filter = ('user__role',)
+    search_fields = ('user__username', 'user__phone')
 
-# ادمین برای Customer
-@admin.register(Customer)
-class CustomerAdmin(UserProfileAdmin):
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.filter(role='customer')
+    def phone(self, obj):
+        return obj.user.phone
+    phone.short_description = 'شماره تماس'
 
-    def save_model(self, request, obj, form, change):
-        obj.role = 'customer'
-        super().save_model(request, obj, form, change)
-
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        form.base_fields['role'].disabled = True  # غیرفعال کردن فیلد role
-        return form
+admin.site.register(CustomUser, CustomUserAdmin)
+admin.site.register(ManagerProfile, ManagerProfileAdmin)
+admin.site.register(BarberProfile, BarberProfileAdmin)
+admin.site.register(CustomerProfile, CustomerProfileAdmin)

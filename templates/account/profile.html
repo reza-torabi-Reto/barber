@@ -1,0 +1,42 @@
+<!-- templates/account/profile.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>پروفایل</title>
+</head>
+<body>
+    <h1>پروفایل کاربر: {{ user.username }}</h1>
+    <p>نقش: {{ user.role }}</p>
+    <p>تلفن: {{ user.phone }}</p>
+
+    {% if user.role == 'customer' %}
+        <h2>آرایشگاه‌های شما</h2>
+        {% for customer_shop in user.customer_shops.all %}
+            <p>{{ customer_shop.shop.name }}</p>
+        {% empty %}
+            <p>شما هنوز عضو هیچ آرایشگاهی نیستید.</p>
+        {% endfor %}
+        <a href="{% url 'salon:book_appointment' %}">رزرو نوبت</a>
+        <a href="{% url 'salon:customer_appointments' %}">مشاهده نوبت‌ها</a>
+    {% elif user.role == 'barber' %}
+        <h2>آرایشگاه شما</h2>
+        <p>{{ user.barber_profile.shop.name }}</p>
+        <a href="{% url 'salon:barber_appointments' %}">مشاهده نوبت‌ها</a>
+    {% elif user.role == 'manager' %}
+        <h2>آرایشگاه‌های شما</h2>
+        {% for shop in user.managed_shops.all %}
+            <p>
+                {{ shop.name }}
+                <a href="{% url 'salon:manage_shop' shop.id %}">مدیریت</a>
+                <a href="{% url 'salon:manager_appointments' shop.id %}">مشاهده نوبت‌ها</a>
+            </p>
+        {% empty %}
+            <p>شما هنوز آرایشگاهی ثبت نکرده‌اید.</p>
+        {% endfor %}
+        <a href="{% url 'salon:create_shop' %}">ایجاد آرایشگاه جدید</a>
+    {% endif %}
+
+    <a href="{% url 'account:edit_manager_profile' %}">ویرایش پروفایل</a>
+    <a href="{% url 'account:logout' %}">خروج</a>
+</body>
+</html>

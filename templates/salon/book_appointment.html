@@ -1,0 +1,78 @@
+<!-- templates/salon/book_appointment.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>رزرو نوبت</title>
+</head>
+<body>
+    <h1>رزرو نوبت</h1>
+    <form method="post">
+        {% csrf_token %}
+        {% if form.errors %}
+            <div style="color: red;">
+                <p>لطفاً خطاهای زیر را برطرف کنید:</p>
+                <ul>
+                    {% for field, errors in form.errors.items %}
+                        <li>{{ field }}: {{ errors }}</li>
+                    {% endfor %}
+                    {% if form.non_field_errors %}
+                        <li>{{ form.non_field_errors }}</li>
+                    {% endif %}
+                </ul>
+            </div>
+        {% endif %}
+        <p>
+            <label for="{{ form.shop.id_for_label }}">آرایشگاه:</label>
+            {{ form.shop }}
+        </p>
+        <p>
+            <label for="{{ form.service.id_for_label }}">سرویس:</label>
+            {{ form.service }}
+        </p>
+        <p>
+            <label for="{{ form.barber.id_for_label }}">آرایشگر:</label>
+            {{ form.barber }}
+        </p>
+        <p>
+            <label for="{{ form.date.id_for_label }}">تاریخ:</label>
+            {{ form.date }}
+        </p>
+        <p>
+            <label for="{{ form.time.id_for_label }}">زمان:</label>
+            {{ form.time }}
+        </p>
+        <button type="submit">رزرو نوبت</button>
+    </form>
+    <a href="{% url 'account:profile' %}">بازگشت به پروفایل</a>
+
+    <!-- جاوااسکریپت برای به‌روزرسانی سرویس‌ها و آرایشگرها بر اساس آرایشگاه -->
+    <script>
+        document.getElementById('id_shop').addEventListener('change', function() {
+            var shopId = this.value;
+            fetch(`/salon/get_shop_details/?shop_id=${shopId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // به‌روزرسانی لیست سرویس‌ها
+                    var serviceSelect = document.getElementById('id_service');
+                    serviceSelect.innerHTML = '<option value="">---------</option>';
+                    data.services.forEach(service => {
+                        var option = document.createElement('option');
+                        option.value = service.id;
+                        option.text = service.name;
+                        serviceSelect.appendChild(option);
+                    });
+
+                    // به‌روزرسانی لیست آرایشگرها
+                    var barberSelect = document.getElementById('id_barber');
+                    barberSelect.innerHTML = '<option value="">---------</option>';
+                    data.barbers.forEach(barber => {
+                        var option = document.createElement('option');
+                        option.value = barber.id;
+                        option.text = barber.username;
+                        barberSelect.appendChild(option);
+                    });
+                });
+        });
+    </script>
+</body>
+</html>

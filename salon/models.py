@@ -2,10 +2,11 @@
 from django.db import models
 from django.utils import timezone
 from django.db.models import Sum
+from django.core.exceptions import ValidationError
 from .utils import generate_referral_code
 
 class Shop(models.Model):
-    manager = models.ForeignKey('account.UserProfile', on_delete=models.CASCADE, related_name='managed_shops', verbose_name="مدیر مسئول")
+    manager = models.ForeignKey('account.CustomUser', on_delete=models.CASCADE, related_name='managed_shops', verbose_name="مدیر مسئول")
     name = models.CharField(max_length=100, verbose_name="نام آرایشگاه")
     referral_code = models.CharField(max_length=8, unique=True, verbose_name="کد یکتای جستجو")
     address = models.TextField(verbose_name="آدرس دقیق")
@@ -40,7 +41,7 @@ class Service(models.Model):
         verbose_name_plural = "خدمات"
 
 class CustomerShop(models.Model):
-    customer = models.ForeignKey('account.Customer', on_delete=models.CASCADE, related_name='shop_memberships', verbose_name="مشتری")
+    customer = models.ForeignKey('account.CustomUser', on_delete=models.CASCADE, related_name='shop_memberships', verbose_name="مشتری")
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE, related_name='customer_memberships', verbose_name="آرایشگاه")
     joined_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ عضویت")
 
@@ -52,32 +53,87 @@ class CustomerShop(models.Model):
     def __str__(self):
         return f"{self.customer.username} در {self.shop.name}"
 
+
 class Appointment(models.Model):
-    STATUS_CHOICES = [
-        ('pending', 'در انتظار تایید'),
-        ('confirmed', 'تایید شده'),
+    STATUS_CHOICES = (
+        ('pending', 'در انتظار'),
+        ('confirmed', 'تأیید شده'),
+        ('completed', 'تکمیل شده'),
         ('canceled', 'لغو شده'),
-    ]
-    shop = models.ForeignKey(Shop, on_delete=models.CASCADE, related_name='appointments', verbose_name="آرایشگاه")
-    barber = models.ForeignKey('account.Barber', on_delete=models.CASCADE, related_name='barber_appointments', verbose_name="آرایشگر")  # تغییر related_name
-    customer = models.ForeignKey('account.Customer', on_delete=models.CASCADE, related_name='customer_appointments', verbose_name="مشتری")  # تغییر related_name
-    start_time = models.DateTimeField(verbose_name="زمان شروع")
-    end_time = models.DateTimeField(verbose_name="زمان پایان")
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending', verbose_name="وضعیت نوبت")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="زمان ایجاد")
+    )
+
+    customer = models.ForeignKey('account.CustomUser', on_delete=models.CASCADE, related_name='appointments')
+    shop = models.ForeignKey(Shop, on_delete=models.CASCADE, related_name='appointments')
+    barber = models.ForeignKey('account.CustomUser', on_delete=models.CASCADE, related_name='barber_appointments')
+    service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='appointments')
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('barber', 'start_time')
-        verbose_name = "نوبت"
-        verbose_name_plural = "نوبت‌ها"
+        # جلوگیری از رزرو همزمان برای یک آرایشگر
+        constraints = [
+            models.UniqueConstraint(
+                fields=['barber', 'start_time'],
+                name='unique_barber_appointment'
+            )
+        ]
+
+    def clean(self):
+        # بررسی اینکه آرایشگر متعلق به آرایشگاه انتخاب‌شده باشد
+        if self.barber.barber_profile.shop != self.shop:
+            raise ValidationError("The selected barber does not belong to this shop.")
+
+        # بررسی اینکه سرویس متعلق به آرایشگاه انتخاب‌شده باشد
+        if self.service.shop != self.shop:
+            raise ValidationError("The selected service does not belong to this shop.")
+
+        # بررسی اینکه مشتری عضو آرایشگاه باشد
+        if not CustomerShop.objects.filter(customer=self.customer, shop=self.shop).exists():
+            raise ValidationError("The customer is not a member of this shop.")
+
+        # محاسبه end_time بر اساس مدت زمان سرویس
+        if self.service.duration:
+            self.end_time = self.start_time + self.service.duration
+        else:
+            raise ValidationError("Service duration must be set.")
+
+        # بررسی تداخل زمانی با نوبت‌های دیگر آرایشگر
+        overlapping_appointments = Appointment.objects.filter(
+            barber=self.barber,
+            start_time__lt=self.end_time,
+            end_time__gt=self.start_time,
+            status__in=['pending', 'confirmed']
+        ).exclude(id=self.id)
+
+        if overlapping_appointments.exists():
+            raise ValidationError("This time slot is already booked by another appointment.")
+
+        # بررسی اینکه زمان نوبت توی ساعات کاری آرایشگاه باشه
+        day_of_week = self.start_time.strftime('%A').lower()
+        schedule = ShopSchedule.objects.filter(shop=self.shop, day_of_week=day_of_week).first()
+        if not schedule or not schedule.is_open:
+            raise ValidationError("The shop is closed on this day.")
+
+        start_time_only = self.start_time.time()
+        end_time_only = self.end_time.time()
+
+        if start_time_only < schedule.start_time or end_time_only > schedule.end_time:
+            raise ValidationError("The appointment time is outside the shop's working hours.")
+
+        if schedule.break_start and schedule.break_end:
+            if (start_time_only >= schedule.break_start and start_time_only < schedule.break_end) or \
+               (end_time_only > schedule.break_start and end_time_only <= schedule.break_end):
+                raise ValidationError("The appointment time overlaps with the shop's break time.")
+
+        # بررسی اینکه زمان نوبت توی گذشته نباشه
+        if self.start_time < timezone.now():
+            raise ValidationError("Cannot book an appointment in the past.")
 
     def __str__(self):
-        return f"{self.customer.username} - {self.start_time}"
-
-    def save(self, *args, **kwargs):
-        total_duration = self.selected_services.aggregate(Sum('service__duration'))['service__duration__sum'] or 0
-        self.end_time = self.start_time + timezone.timedelta(minutes=total_duration)
-        super().save(*args, **kwargs)
+        return f"{self.customer.username} - {self.service.name} with {self.barber.username} at {self.start_time}"
+    
 
 class AppointmentService(models.Model):
     appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE, related_name='selected_services', verbose_name="نوبت")
@@ -90,3 +146,52 @@ class AppointmentService(models.Model):
 
     def __str__(self):
         return f"{self.appointment.id} - {self.service.name}"
+    
+
+class ShopSchedule(models.Model):
+    DAY_CHOICES = (
+        ('saturday', 'شنبه'),
+        ('sunday', 'یک‌شنبه'),
+        ('monday', 'دوشنبه'),
+        ('tuesday', 'سه‌شنبه'),
+        ('wednesday', 'چهارشنبه'),
+        ('thursday', 'پنج‌شنبه'),
+        ('friday', 'جمعه'),
+    )
+
+    shop = models.ForeignKey(Shop, on_delete=models.CASCADE, related_name='schedules')
+    day_of_week = models.CharField(max_length=10, choices=DAY_CHOICES)
+    is_open = models.BooleanField(default=True)
+    start_time = models.TimeField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
+    break_start = models.TimeField(null=True, blank=True)
+    break_end = models.TimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('shop', 'day_of_week')
+
+    def clean(self):
+        if self.is_open:
+            if not self.start_time or not self.end_time:
+                raise ValidationError("Start time and end time are required if the shop is open.")
+            if self.start_time >= self.end_time:
+                raise ValidationError("End time must be after start time.")
+            if self.break_start and self.break_end:
+                if self.break_start >= self.break_end:
+                    raise ValidationError("Break end time must be after break start time.")
+                if self.break_start < self.start_time or self.break_end > self.end_time:
+                    raise ValidationError("Break time must be within working hours.")
+            elif (self.break_start and not self.break_end) or (self.break_end and not self.break_start):
+                raise ValidationError("Both break start and break end times must be provided, or neither.")
+        else:
+            self.start_time = None
+            self.end_time = None
+            self.break_start = None
+            self.break_end = None
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.shop.name} - {self.get_day_of_week_display()}"

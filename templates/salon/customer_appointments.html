@@ -1,0 +1,40 @@
+<!-- templates/salon/customer_appointments.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>نوبت‌های من</title>
+</head>
+<body>
+    <h1>نوبت‌های من</h1>
+    {% if appointments %}
+        <table>
+            <thead>
+                <tr>
+                    <th>آرایشگاه</th>
+                    <th>سرویس</th>
+                    <th>آرایشگر</th>
+                    <th>زمان شروع</th>
+                    <th>زمان پایان</th>
+                    <th>وضعیت</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for appointment in appointments %}
+                    <tr>
+                        <td>{{ appointment.shop.name }}</td>
+                        <td>{{ appointment.service.name }}</td>
+                        <td>{{ appointment.barber.username }}</td>
+                        <td>{{ appointment.start_time }}</td>
+                        <td>{{ appointment.end_time }}</td>
+                        <td>{{ appointment.get_status_display }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>شما هیچ نوبت فعالی ندارید.</p>
+    {% endif %}
+    <a href="{% url 'account:profile' %}">بازگشت به پروفایل</a>
+    <a href="{% url 'salon:book_appointment' %}">رزرو نوبت جدید</a>
+</body>
+</html>

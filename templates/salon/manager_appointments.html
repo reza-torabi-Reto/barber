@@ -1,0 +1,39 @@
+<!-- templates/salon/manager_appointments.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>نوبت‌های آرایشگاه: {{ shop.name }}</title>
+</head>
+<body>
+    <h1>نوبت‌های آرایشگاه: {{ shop.name }}</h1>
+    {% if appointments %}
+        <table>
+            <thead>
+                <tr>
+                    <th>مشتری</th>
+                    <th>سرویس</th>
+                    <th>آرایشگر</th>
+                    <th>زمان شروع</th>
+                    <th>زمان پایان</th>
+                    <th>وضعیت</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for appointment in appointments %}
+                    <tr>
+                        <td>{{ appointment.customer.username }}</td>
+                        <td>{{ appointment.service.name }}</td>
+                        <td>{{ appointment.barber.username }}</td>
+                        <td>{{ appointment.start_time }}</td>
+                        <td>{{ appointment.end_time }}</td>
+                        <td>{{ appointment.get_status_display }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>هیچ نوبت فعالی برای این آرایشگاه وجود ندارد.</p>
+    {% endif %}
+    <a href="{% url 'salon:manage_shop' shop.id %}">بازگشت به مدیریت آرایشگاه</a>
+</body>
+</html>

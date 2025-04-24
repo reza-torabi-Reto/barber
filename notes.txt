@@ -1,21 +1,53 @@
-Do:
-- create manager -> ok
-- login manager -> ok
-- create shop ->  ok
-- list shop -> ok
-- create barber -> ok
-- list barber -> ok
-- create service -> ok
-- list service -> ok
-- create customer -> ok
-- join shop to customer -> ok
-- leave shop from customer - > ok
-
 manager:
-username - password - nikname - avatar - phone - email - about - role - status
+- manage of profile :
+    - edite info -> ok
+    - recover password -> 
+- settings days of work 
+- message to customers
+- manage of appointments
 
 barber:
-username - password - nikname - avatar - phone - email - about - role - status - shop
+- manage of profile:
+    - edite info -> ok
+    - recover password ->
+- manage of appointments
 
 customer:
-username - password - nikname - phone - role - status
+- manage of profile:
+    - edite info -> ok
+    - recover password ->
+- select appointment -> ok
+- views appointments
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+مدیر:
+1.ایجاد(ویرایش، حذف و ...) آرایشگاه
+2. ایجاد(ویرایش، حذف و ...) آرایشگر
+3. ایجاد (ویرایش و...) خدمات
+4. تعیین روزهای کاری هفتگی - تعیین ساعت کاری روزانه - تعیین ساعت استراحت روزانه
+5. مدیریت مشتریان (تعیین وضعیت(قبول/رد)، پیام دادن و...)
+6. مدیریت نوبت ها
+7. ویرایش پروفایل خودش
+8. دیدن تاریخچه نوبت ها
+
+آرایشگر:
+1. ویرایش پروفایل خودش
+2. دیدن و تعیین وضعیت نوبت های مربوط به خودش
+
+مشتری:
+1. ویرایش پروفایل خودش
+2.مدیریت آرایشگاه های عضو شده(لغو عضویت و...)
+3. فرایند گرفتن نوبت (انتخاب آرایشگر، خدمات، زمان و...)
+3. دیدن تاریخچه نوبت ها

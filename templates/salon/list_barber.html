@@ -1,0 +1,30 @@
+<!-- salon/templates/salon/barber_list.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>آرایشگرهای {{ shop.name }}</title>
+</head>
+<body>
+    <h1>آرایشگرهای {{ shop.name }}</h1>
+    <a href="{% url 'salon:create_barber' shop.id %}">ثبت آرایشگر جدید</a>
+    <br><br>
+    
+    {% if barbers %}
+        <ul>
+        {% for barber in barbers %}
+            <li>
+                {{ barber.username }} ({{ barber.phone }})
+                {% if barber.barber_profile.avatar %}
+                    <img src="{{ barber.barber_profile.avatar.url }}" alt="آواتار" width="50">
+                {% endif %}
+                <p>درباره: {{ barber.barber_profile.bio|default:"-" }}</p>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>در حال حاضر آرایشگری برای این آرایشگاه ثبت نشده است.</p>
+    {% endif %}
+    
+    <a href="{% url 'account:profile' %}">بازگشت به پروفایل</a>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!-- account/templates/account/barber_profile.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>پروفایل آرایشگر</title>
+</head>
+<body>
+    <h1>پروفایل شما</h1>
+    <p>خوش آمدید، {{ user.username }}!</p>
+    <p>نام: {{ user.first_name|default:"ثبت نشده" }}</p>
+    <p>نام خانوادگی: {{ user.last_name|default:"ثبت نشده" }}</p>
+    <p>ایمیل: {{ user.email|default:"ثبت نشده" }}</p>
+    <p>نقش: {{ user.role|default:"-" }}</p>
+    <p>شماره تلفن: {{ user.phone|default:"ثبت نشده" }}</p>
+    {% if profile.avatar %}
+        <img src="{{ profile.avatar.url }}" alt="آواتار" width="100">
+    {% else %}
+        <p>آواتار: ثبت نشده</p>
+    {% endif %}
+    <p>درباره من: {{ profile.bio|default:"هنوز چیزی ننوشته‌اید" }}</p>
+    <p>آرایشگاه: {% if profile.shop %}{{ profile.shop.name }}{% else %}ثبت نشده{% endif %}</p>
+
+    <a href="{% url 'account:edit_barber_profile' %}">ویرایش پروفایل</a>
+    <br><br>
+
+    <form method="post" action="{% url 'account:logout' %}">
+        {% csrf_token %}
+        <button type="submit">خروج</button>
+    </form>
+</body>
+</html>

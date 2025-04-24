@@ -1,0 +1,51 @@
+<!-- salon/templates/salon/manage_shop.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>مدیریت آرایشگاه</title>
+</head>
+<body>
+    <h1>مدیریت آرایشگاه: {{ shop.name }}</h1>
+    <p>کد یکتا: {{ shop.referral_code }}</p>
+    <p>وضعیت: {{ shop.status }}</p>
+
+    <h2>تنظیمات آرایشگاه</h2>
+    <a href="{% url 'salon:manage_schedule' shop.id %}">مدیریت تنظیمات (روزهای کاری و ساعات)</a>
+    <br><br>
+
+    <h2>آرایشگرها</h2>
+    <a href="{% url 'salon:create_barber' shop.id %}">ایجاد آرایشگر جدید</a>
+    <br><br>
+    {% if barbers %}
+        <ul>
+        {% for barber in barbers %}
+            <li>
+                {{ barber.username }} - {{ barber.phone }}
+                <a href="{% url 'salon:delete_barber' shop.id barber.id %}">حذف</a>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>در حال حاضر آرایشگری ندارید.</p>
+    {% endif %}
+
+    <h2>خدمات</h2>
+    <a href="{% url 'salon:create_service' shop.id %}">ایجاد خدمت جدید</a>
+    <br><br>
+    {% if services %}
+        <ul>
+        {% for service in services %}
+            <li>
+                {{ service.name }} - {{ service.price }} - {{ service.duration }}
+                <a href="{% url 'salon:edit_service' shop.id service.id %}">ویرایش</a> |
+                <a href="{% url 'salon:delete_service' shop.id service.id %}">حذف</a>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>در حال حاضر خدمتی ندارید.</p>
+    {% endif %}
+
+    <a href="{% url 'account:profile' %}">بازگشت به پروفایل</a>
+</body>
+</html>

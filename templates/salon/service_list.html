@@ -19,6 +19,6 @@
         <p>در حال حاضر خدمتی برای این آرایشگاه ثبت نشده است.</p>
     {% endif %}
     
-    <a href="{% url 'salon:shop_list' %}">بازگشت به لیست آرایشگاه‌ها</a>
+    <a href="{% url 'salon:manage_shop' shop.id %}">بازگشت به مدیریت آرایشگاه</a>
 </body>
 </html>

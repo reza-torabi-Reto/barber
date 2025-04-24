@@ -1,0 +1,33 @@
+<!-- account/templates/account/customer_list.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>مشتریان {{ shop.name }}</title>
+</head>
+<body>
+    <h1>مشتریان {{ shop.name }}</h1>
+
+    <h2>جستجوی مشتری</h2>
+    <form method="get">
+        <input type="text" name="search" value="{{ search_query }}" placeholder="نام کاربری یا شماره تلفن">
+        <button type="submit">جستجو</button>
+    </form>
+
+    {% if search_query and not customers_with_joined %}
+        <p>مشتری‌ای با این مشخصات پیدا نشد.</p>
+    {% endif %}
+
+    <h2>فهرست مشتریان</h2>
+    {% if customers_with_joined %}
+        <ul>
+        {% for customer, joined_at in customers_with_joined %}
+            <li>{{ customer.username }} ({{ customer.phone }}) - عضویت از: {{ joined_at }}</li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>در حال حاضر مشتری‌ای برای این آرایشگاه ثبت نشده است.</p>
+    {% endif %}
+
+    <a href="{% url 'account:profile' %}">بازگشت به پروفایل</a>
+</body>
+</html>

@@ -1,73 +1,148 @@
-# account/forms.py
 from django import forms
-from .models import Manager
+from django.contrib.auth.forms import UserCreationForm
+from .models import CustomUser, ManagerProfile, BarberProfile, CustomerProfile
 
-class ManagerSignUpForm(forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput, label="رمز عبور")
+class ManagerSignUpForm(UserCreationForm):
+    phone = forms.CharField(max_length=15, required=True)
+    avatar = forms.ImageField(required=False)
+    bio = forms.CharField(widget=forms.Textarea, required=False)
 
     class Meta:
-        model = Manager
-        fields = ['username', 'phone', 'password']
-        labels = {
-            'username': 'نام کاربری',
-            'phone': 'شماره تلفن',
-        }
+        model = CustomUser
+        fields = ('username', 'password1', 'password2', 'phone', 'avatar', 'bio')
 
     def save(self, commit=True):
-        manager = super().save(commit=False)
-        manager.set_password(self.cleaned_data['password'])  # هش کردن رمز عبور
-        manager.role = 'manager'  # تنظیم نقش به مدیر
+        user = super().save(commit=False)
+        user.role = 'manager'
         if commit:
-            manager.save()
-        return manager
-    
-    # account/forms.py
-from django import forms
-from .models import UserProfile
+            user.save()
+            ManagerProfile.objects.create(
+                user=user,
+                avatar=self.cleaned_data.get('avatar'),
+                bio=self.cleaned_data.get('bio')
+            )
+        return user
 
-class BarberSignUpForm(forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput, label="رمز عبور")
+class CustomerSignUpForm(UserCreationForm):
+    phone = forms.CharField(max_length=15, required=True)
 
     class Meta:
-        model = UserProfile
-        fields = ['username', 'phone', 'email', 'avatar', 'password']
-        labels = {
-            'username': 'نام کاربری',
-            # 'nickname': 'نام مستعار',
-            'phone': 'شماره تلفن',
-            'email': 'ایمیل',
-            'avatar': 'تصویر پروفایل',
-            # 'about': 'درباره آرایشگر',
-        }
+        model = CustomUser
+        fields = ('username', 'password1', 'password2', 'phone')
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.role = 'customer'
+        if commit:
+            user.save()
+            CustomerProfile.objects.create(user=user)
+        return user
+
+class BarberSignUpForm(UserCreationForm):
+    phone = forms.CharField(max_length=15, required=True)
+    avatar = forms.ImageField(required=False)
+    bio = forms.CharField(widget=forms.Textarea, required=False)
+
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'password1', 'password2', 'phone', 'avatar', 'bio')
 
     def save(self, commit=True, shop=None):
         user = super().save(commit=False)
-        user.set_password(self.cleaned_data['password'])
         user.role = 'barber'
-        user.is_active = True
-        if shop:  # آرایشگاه رو از ویو می‌گیره
-            user.shop = shop
         if commit:
             user.save()
+            BarberProfile.objects.create(
+                user=user,
+                avatar=self.cleaned_data.get('avatar'),
+                bio=self.cleaned_data.get('bio'),
+                shop=shop
+            )
         return user
-    
-class CustomerSignUpForm(forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput, label="رمز عبور")
+
+class BarberProfileForm(forms.ModelForm):
+    phone = forms.CharField(max_length=15, required=False)
+    first_name = forms.CharField(max_length=30, required=False)
+    last_name = forms.CharField(max_length=30, required=False)
+    email = forms.EmailField(required=False)
 
     class Meta:
-        model = UserProfile
-        fields = ['username', 'nickname', 'phone', 'password']  # فیلدهای کمتر برای مشتری
-        labels = {
-            'username': 'نام کاربری',
-            'nickname': 'نام مستعار',
-            'phone': 'شماره تلفن',
-        }
+        model = BarberProfile
+        fields = ('avatar', 'bio')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance:
+            self.fields['phone'].initial = self.instance.user.phone
+            self.fields['first_name'].initial = self.instance.user.first_name
+            self.fields['last_name'].initial = self.instance.user.last_name
+            self.fields['email'].initial = self.instance.user.email
 
     def save(self, commit=True):
-        user = super().save(commit=False)
-        user.set_password(self.cleaned_data['password'])
-        user.role = 'customer'
-        user.is_active = True
+        profile = super().save(commit=False)
         if commit:
-            user.save()
-        return user
+            profile.user.phone = self.cleaned_data['phone']
+            profile.user.first_name = self.cleaned_data['first_name']
+            profile.user.last_name = self.cleaned_data['last_name']
+            profile.user.email = self.cleaned_data['email']
+            profile.user.save()
+            profile.save()
+        return profile
+
+class ManagerProfileForm(forms.ModelForm):
+    phone = forms.CharField(max_length=15, required=False)
+    first_name = forms.CharField(max_length=30, required=False)
+    last_name = forms.CharField(max_length=30, required=False)
+    email = forms.EmailField(required=False)
+
+    class Meta:
+        model = ManagerProfile
+        fields = ('avatar', 'bio')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance:
+            self.fields['phone'].initial = self.instance.user.phone
+            self.fields['first_name'].initial = self.instance.user.first_name
+            self.fields['last_name'].initial = self.instance.user.last_name
+            self.fields['email'].initial = self.instance.user.email
+
+    def save(self, commit=True):
+        profile = super().save(commit=False)
+        if commit:
+            profile.user.phone = self.cleaned_data['phone']
+            profile.user.first_name = self.cleaned_data['first_name']
+            profile.user.last_name = self.cleaned_data['last_name']
+            profile.user.email = self.cleaned_data['email']
+            profile.user.save()
+            profile.save()
+        return profile
+    
+class CustomerProfileForm(forms.ModelForm):
+    phone = forms.CharField(max_length=15, required=False)
+    first_name = forms.CharField(max_length=30, required=False)
+    last_name = forms.CharField(max_length=30, required=False)
+    email = forms.EmailField(required=False)
+
+    class Meta:
+        model = CustomerProfile
+        fields = ()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance:
+            self.fields['phone'].initial = self.instance.user.phone
+            self.fields['first_name'].initial = self.instance.user.first_name
+            self.fields['last_name'].initial = self.instance.user.last_name
+            self.fields['email'].initial = self.instance.user.email
+
+    def save(self, commit=True):
+        profile = super().save(commit=False)
+        if commit:
+            profile.user.phone = self.cleaned_data['phone']
+            profile.user.first_name = self.cleaned_data['first_name']
+            profile.user.last_name = self.cleaned_data['last_name']
+            profile.user.email = self.cleaned_data['email']
+            profile.user.save()
+            profile.save()
+        return profile
