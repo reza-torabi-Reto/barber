@@ -31,7 +31,7 @@
                 {% if shop.id in customer_shop_ids %}
                     <span>(شما عضو هستید)</span>
                 {% else %}
-                    <a href="{% url 'account:join_shop' shop.id %}">عضویت</a>
+                    <a href="{% url 'account:join_shop' shop.id %}">عضویت</a> 
                 {% endif %}
             </li>
         {% endfor %}
@@ -46,8 +46,9 @@
         {% for customer_shop in customer_shops %}
             <li>
                 {{ customer_shop.shop.name }} (کد: {{ customer_shop.shop.referral_code }}) - عضویت از: {{ customer_shop.joined_at }}
-                <a href="{% url 'account:leave_shop' customer_shop.shop.id %}">لغو عضویت</a>|
-                <a href="{% url 'salon:book_appointment' %}">نوبت</a>
+                <a href="{% url 'account:leave_shop' customer_shop.shop.id %}">لغو عضویت</a> |
+                <a href="{% url 'salon:book_appointment' customer_shop.shop.id %}">رزرو نوبت</a>
+
             </li>
         {% endfor %}
         </ul>

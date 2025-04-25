@@ -3,6 +3,7 @@ from django.db import models
 from django.utils import timezone
 from django.db.models import Sum
 from django.core.exceptions import ValidationError
+from datetime import timedelta 
 from .utils import generate_referral_code
 
 class Shop(models.Model):
@@ -63,16 +64,14 @@ class Appointment(models.Model):
     )
 
     customer = models.ForeignKey('account.CustomUser', on_delete=models.CASCADE, related_name='appointments')
-    shop = models.ForeignKey(Shop, on_delete=models.CASCADE, related_name='appointments')
+    shop = models.ForeignKey('Shop', on_delete=models.CASCADE, related_name='appointments')
     barber = models.ForeignKey('account.CustomUser', on_delete=models.CASCADE, related_name='barber_appointments')
-    service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='appointments')
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        # جلوگیری از رزرو همزمان برای یک آرایشگر
         constraints = [
             models.UniqueConstraint(
                 fields=['barber', 'start_time'],
@@ -80,65 +79,14 @@ class Appointment(models.Model):
             )
         ]
 
-    def clean(self):
-        # بررسی اینکه آرایشگر متعلق به آرایشگاه انتخاب‌شده باشد
-        if self.barber.barber_profile.shop != self.shop:
-            raise ValidationError("The selected barber does not belong to this shop.")
-
-        # بررسی اینکه سرویس متعلق به آرایشگاه انتخاب‌شده باشد
-        if self.service.shop != self.shop:
-            raise ValidationError("The selected service does not belong to this shop.")
-
-        # بررسی اینکه مشتری عضو آرایشگاه باشد
-        if not CustomerShop.objects.filter(customer=self.customer, shop=self.shop).exists():
-            raise ValidationError("The customer is not a member of this shop.")
-
-        # محاسبه end_time بر اساس مدت زمان سرویس
-        if self.service.duration:
-            self.end_time = self.start_time + self.service.duration
-        else:
-            raise ValidationError("Service duration must be set.")
-
-        # بررسی تداخل زمانی با نوبت‌های دیگر آرایشگر
-        overlapping_appointments = Appointment.objects.filter(
-            barber=self.barber,
-            start_time__lt=self.end_time,
-            end_time__gt=self.start_time,
-            status__in=['pending', 'confirmed']
-        ).exclude(id=self.id)
-
-        if overlapping_appointments.exists():
-            raise ValidationError("This time slot is already booked by another appointment.")
-
-        # بررسی اینکه زمان نوبت توی ساعات کاری آرایشگاه باشه
-        day_of_week = self.start_time.strftime('%A').lower()
-        schedule = ShopSchedule.objects.filter(shop=self.shop, day_of_week=day_of_week).first()
-        if not schedule or not schedule.is_open:
-            raise ValidationError("The shop is closed on this day.")
-
-        start_time_only = self.start_time.time()
-        end_time_only = self.end_time.time()
-
-        if start_time_only < schedule.start_time or end_time_only > schedule.end_time:
-            raise ValidationError("The appointment time is outside the shop's working hours.")
-
-        if schedule.break_start and schedule.break_end:
-            if (start_time_only >= schedule.break_start and start_time_only < schedule.break_end) or \
-               (end_time_only > schedule.break_start and end_time_only <= schedule.break_end):
-                raise ValidationError("The appointment time overlaps with the shop's break time.")
-
-        # بررسی اینکه زمان نوبت توی گذشته نباشه
-        if self.start_time < timezone.now():
-            raise ValidationError("Cannot book an appointment in the past.")
-
     def __str__(self):
-        return f"{self.customer.username} - {self.service.name} with {self.barber.username} at {self.start_time}"
-    
+        return f"{self.customer.username} - Appointment with {self.barber.username} at {self.start_time}"    
+
 
 class AppointmentService(models.Model):
     appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE, related_name='selected_services', verbose_name="نوبت")
     service = models.ForeignKey(Service, on_delete=models.CASCADE, verbose_name="خدمت انتخابی")
-    quantity = models.PositiveIntegerField(default=1, verbose_name="تعداد")
+    # quantity = models.PositiveIntegerField(default=1, verbose_name="تعداد")
 
     class Meta:
         verbose_name = "خدمت نوبت"

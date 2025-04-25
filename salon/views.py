@@ -1,8 +1,10 @@
-# salon/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
+from datetime import datetime, timedelta, timezone
 from django.http import JsonResponse
+from django.db.models import Sum
+from django.utils import timezone
 from .forms import ShopForm, ServiceForm, ShopScheduleFormSet, AppointmentForm
 from .models import Shop, Service, CustomerShop, ShopSchedule, Appointment
 from account.models import CustomUser
@@ -180,28 +182,39 @@ def manage_schedule(request, shop_id):
         'form_schedule_pairs': form_schedule_pairs,
     })
 
+
+# salon/views.py
 @login_required
-def book_appointment(request):
+def book_appointment(request, shop_id):
     if request.user.role != 'customer':
         return redirect('home')
+    
+    shop = get_object_or_404(Shop, id=shop_id)
+    if not CustomerShop.objects.filter(customer=request.user, shop=shop).exists():
+        return redirect('account:customer_profile')
 
     if request.method == 'POST':
-        form = AppointmentForm(request.POST, customer=request.user)
+        form = AppointmentForm(request.POST, customer=request.user, shop=shop)
+        print("POST data:", request.POST)
         if form.is_valid():
-            form.save()
+            print("Cleaned data:", form.cleaned_data)
+            appointment = form.save()
             return redirect('salon:customer_appointments')
+        else:
+            print("Form errors:", form.errors)
     else:
-        form = AppointmentForm(customer=request.user)
+        form = AppointmentForm(customer=request.user, shop=shop)
 
-    return render(request, 'salon/book_appointment.html', {'form': form})
+    return render(request, 'salon/book_appointment.html', {'form': form, 'shop': shop})
 
 
+# salon/views.py
 def get_shop_details(request):
     shop_id = request.GET.get('shop_id')
     if not shop_id:
         return JsonResponse({'services': [], 'barbers': []})
 
-    services = Service.objects.filter(shop_id=shop_id).values('id', 'name')
+    services = Service.objects.filter(shop_id=shop_id).values('id', 'name', 'price', 'duration')
     barbers = CustomUser.objects.filter(
         role='barber',
         barber_profile__shop_id=shop_id
@@ -211,7 +224,6 @@ def get_shop_details(request):
         'services': list(services),
         'barbers': list(barbers),
     })
-
 
 @login_required
 def customer_appointments(request):
@@ -240,3 +252,78 @@ def manager_appointments(request, shop_id):
         'shop': shop,
         'appointments': appointments
     })
+
+
+def get_available_times(request):
+    shop_id = request.GET.get('shop_id')
+    barber_id = request.GET.get('barber_id')
+    date_str = request.GET.get('date')
+    service_ids = request.GET.getlist('services')
+
+    if not all([shop_id, barber_id, date_str, service_ids]):
+        return JsonResponse({'times': []})
+
+    try:
+        selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return JsonResponse({'times': []})
+
+    shop = get_object_or_404(Shop, id=shop_id)
+    barber = get_object_or_404(CustomUser, id=barber_id, role='barber', barber_profile__shop=shop)
+    services = Service.objects.filter(id__in=service_ids, shop=shop)
+
+    if not services.exists():
+        return JsonResponse({'times': []})
+
+    # محاسبه مجموع مدت زمان
+    total_duration = services.aggregate(total=Sum('duration'))['total']
+    if not total_duration:
+        return JsonResponse({'times': []})
+
+    # گرفتن برنامه کاری
+    day_of_week = selected_date.strftime('%A').lower()
+    schedule = ShopSchedule.objects.filter(shop=shop, day_of_week=day_of_week).first()
+    if not schedule or not schedule.is_open:
+        return JsonResponse({'times': []})
+
+    # محاسبه زمان‌های آزاد
+    available_times = []
+    start_time = datetime.combine(selected_date, schedule.start_time)
+    end_time = datetime.combine(selected_date, schedule.end_time)
+    break_start = datetime.combine(selected_date, schedule.break_start) if schedule.break_start else None
+    break_end = datetime.combine(selected_date, schedule.break_end) if schedule.break_end else None
+
+    start_time = timezone.make_aware(start_time)
+    end_time = timezone.make_aware(end_time)
+    if break_start:
+        break_start = timezone.make_aware(break_start)
+        break_end = timezone.make_aware(break_end)
+
+    booked_appointments = Appointment.objects.filter(
+        barber=barber,
+        start_time__date=selected_date,
+        status__in=['pending', 'confirmed']
+    ).values('start_time', 'end_time')
+
+    current_time = start_time
+    while current_time + timedelta(minutes=total_duration) <= end_time:
+        slot_end = current_time + timedelta(minutes=total_duration)
+        is_available = True
+
+        for appt in booked_appointments:
+            appt_start = appt['start_time']
+            appt_end = appt['end_time']
+            if current_time < appt_end and slot_end > appt_start:
+                is_available = False
+                break
+
+        if break_start and break_end:
+            if current_time < break_end and slot_end > break_start:
+                is_available = False
+
+        if is_available:
+            available_times.append(current_time.strftime('%H:%M'))
+
+        current_time += timedelta(minutes=30)  # گام‌های 30 دقیقه‌ای
+
+    return JsonResponse({'times': available_times})

@@ -16,9 +16,12 @@ urlpatterns = [
     path('shop/<int:shop_id>/delete-service/<int:service_id>/', views.delete_service, name='delete_service'),
     path('shop/<int:shop_id>/edit-service/<int:service_id>/', views.edit_service, name='edit_service'),
     path('shop/manage-schedule/<int:shop_id>/', views.manage_schedule, name='manage_schedule'),
-    path('book-appointment/', views.book_appointment, name='book_appointment'),
+    # path('book-appointment/', views.book_appointment, name='book_appointment'),
     path('get_shop_details/', views.get_shop_details, name='get_shop_details'),
     path('customer-appointments/', views.customer_appointments, name='customer_appointments'),
     path('barber-appointments/', views.barber_appointments, name='barber_appointments'),
     path('shop/<int:shop_id>/appointments/', views.manager_appointments, name='manager_appointments'),
+    path('book-appointment/<int:shop_id>/', views.book_appointment, name='book_appointment'),
+    path('get-shop-details/', views.get_shop_details, name='get_shop_details'),
+    path('get-available-times/', views.get_available_times, name='get_available_times'),
 ]
