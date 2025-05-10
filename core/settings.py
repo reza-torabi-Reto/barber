@@ -31,6 +31,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 # LOGOUT_REDIRECT_URL = 'account:home'
 LOGIN_URL = 'account:login'
+# LOGOUT_REDIRECT_URL = 'account:logout'
 AUTH_USER_MODEL = 'account.CustomUser'
 # Application definition
 
@@ -41,6 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'extensions',
+    'django_jalali',
     'account',
     'salon',
 ]
@@ -109,8 +112,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
-# LANGUAGE_CODE = 'fa-ir'
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'fa-ir'
+# LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Tehran'
 
 USE_I18N = True

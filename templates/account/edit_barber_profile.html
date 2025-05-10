@@ -1,10 +1,7 @@
 <!-- account/templates/account/edit_barber_profile.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>ویرایش پروفایل آرایشگر</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% block title %}پروفایل{% endblock %}
+{% block content %}
     <h1>ویرایش پروفایل</h1>
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
@@ -12,5 +9,4 @@
         <button type="submit">ذخیره تغییرات</button>
     </form>
     <a href="{% url 'account:barber_profile' %}">بازگشت به پروفایل</a>
-</body>
-</html>
+{% endblock %}

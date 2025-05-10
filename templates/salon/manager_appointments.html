@@ -1,31 +1,29 @@
 <!-- templates/salon/manager_appointments.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>نوبت‌های آرایشگاه: {{ shop.name }}</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% load custom_filters %} 
+{% block title %}پروفایل{% endblock %}
+{% block content %}
     <h1>نوبت‌های آرایشگاه: {{ shop.name }}</h1>
     {% if appointments %}
         <table>
             <thead>
                 <tr>
-                    <th>مشتری</th>
-                    <th>سرویس</th>
-                    <th>آرایشگر</th>
-                    <th>زمان شروع</th>
-                    <th>زمان پایان</th>
-                    <th>وضعیت</th>
+                    <th style="width: 200px;">تاریخ</th>
+                    <th style="width: 200px;">زمان شروع</th>
+                    <th style="width: 200px;">آرایشگر</th>
+                    <th style="width: 200px;">مشتری</th>
+                    <th style="width: 200px;">جزییات</th>
+                    <th style="width: 200px;">وضعیت</th>
                 </tr>
             </thead>
             <tbody>
                 {% for appointment in appointments %}
                     <tr>
-                        <td>{{ appointment.customer.username }}</td>
-                        <td>{{ appointment.service.name }}</td>
+                        <td>{{ appointment.start_time|j_date }}</td>
+                        <td>{{ appointment.start_time|j_time }}</td>
+                        <td>{{ appointment.customer.nickname }}</td>
                         <td>{{ appointment.barber.username }}</td>
-                        <td>{{ appointment.start_time }}</td>
-                        <td>{{ appointment.end_time }}</td>
+                        <td><a href="{% url 'salon:confirm_appointment_manager' appointment.id %}"> جزییات</a></td>
                         <td>{{ appointment.get_status_display }}</td>
                     </tr>
                 {% endfor %}
@@ -35,5 +33,4 @@
         <p>هیچ نوبت فعالی برای این آرایشگاه وجود ندارد.</p>
     {% endif %}
     <a href="{% url 'salon:manage_shop' shop.id %}">بازگشت به مدیریت آرایشگاه</a>
-</body>
-</html>
+    {% endblock %}

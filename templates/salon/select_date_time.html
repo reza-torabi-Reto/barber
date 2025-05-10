@@ -1,0 +1,65 @@
+<!-- salon/templates/salon/select_date_time.html -->
+{% extends 'base.html' %}
+{% block title %}پروفایل{% endblock %}
+{% block content %}
+    <div class="container mt-5">
+        <h1>انتخاب تاریخ و زمان - {{ shop.name }}</h1>
+        {% if error %}
+            <div class="alert alert-warning">{{ error }}</div>
+        {% endif %}
+        <h3>سرویس‌ها:</h3>
+        <ul>
+            {% for service in services %}
+                <li>{{ service.name }} ({{ service.duration }} دقیقه)</li>
+            {% endfor %}
+        </ul>
+        <h3>آرایشگر: {{ barber.username }}</h3>
+        <h3>انتخاب روز:</h3>
+        <div>
+            {% if dates %}
+                {% for date in dates %}
+                    <button type="button" class="btn btn-outline-primary date-btn" onclick="loadTimes('{{ date.gregorian_date|date:'Y-m-d' }}')">
+                        {{ date.day_of_week }}، {{ date.jalali_date }}
+                    </button>
+                {% endfor %}
+            {% else %}
+                <p>هیچ روز آزادی برای رزرو در دسترس نیست.</p>
+            {% endif %}
+        </div>
+
+        <h3 class="mt-4">انتخاب زمان:</h3>
+        <div id="time-slots" class="time-slot">
+            <p>لطفاً یک روز انتخاب کنید.</p>
+        </div>
+
+        <a href="{% url 'salon:book_appointment' shop.id %}" class="btn btn-secondary mt-3">بازگشت</a>
+    </div>
+
+    <script>
+        function loadTimes(date) {
+            const serviceIds = {{ appointment_data.services|safe }};
+            const barberId = {{ appointment_data.barber_id }};
+            const shopId = {{ appointment_data.shop_id }};
+            const serviceParams = serviceIds.map(id => `services=${id}`).join('&');
+            fetch(`/salon/get-available-times/?shop_id=${shopId}&barber_id=${barberId}&date=${date}&${serviceParams}`)
+                .then(response => response.json())
+                .then(data => {
+                    const timeSlots = document.getElementById('time-slots');
+                    timeSlots.innerHTML = '';
+                    if (data.times.length === 0) {
+                        timeSlots.innerHTML = '<p>هیچ زمان آزادی برای این روز وجود ندارد.</p>';
+                    } else {
+                        data.times.forEach(time => {
+                            const slotLink = document.createElement('a');
+                            slotLink.href = `{% url 'salon:confirm_appointment' %}?date=${date}&time=${time.start_time}`;
+                            slotLink.className = 'btn btn-outline-success m-2';
+                            slotLink.textContent = `${time.start_time}-${time.end_time}`;
+                            timeSlots.appendChild(slotLink);
+                        });
+                    }
+                    timeSlots.classList.add('active');
+                })
+                .catch(error => console.error('Error fetching times:', error));
+        }
+    </script>
+{% endblock %}

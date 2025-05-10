@@ -1,10 +1,7 @@
 <!-- salon/create_barber.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>ثبت آرایشگر جدید برای {{ shop.name }}</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% block title %}پروفایل{% endblock %}
+{% block content %}
     <h1>{{shop.manager}}</h1>
     <h1>ثبت آرایشگر جدید برای {{ shop.name }} - {{shop.referral_code}}</h1>
     <form method="post" enctype="multipart/form-data">
@@ -13,6 +10,4 @@
         <button type="submit">ثبت آرایشگر</button>
     </form>
     <a href="{% url 'salon:manage_shop' shop.id %}">بازگشت به مدیریت آرایشگاه</a>
-
-</body>
-</html>
+    {% endblock %}

@@ -1,31 +1,32 @@
 <!-- templates/salon/customer_appointments.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>نوبت‌های من</title>
-</head>
+{% extends 'base.html' %}
+{% load custom_filters %} 
+{% block title %}پروفایل{% endblock %}
+{% block content %}
 <body>
     <h1>نوبت‌های من</h1>
     {% if appointments %}
         <table>
             <thead>
                 <tr>
-                    <th>آرایشگاه</th>
-                    <th>سرویس</th>
-                    <th>آرایشگر</th>
-                    <th>زمان شروع</th>
-                    <th>زمان پایان</th>
-                    <th>وضعیت</th>
+                    <th style="width: 100px;">آرایشگاه</th>
+                    <th style="width: 100px;">سرویس</th>
+                    <th style="width: 100px;">آرایشگر</th>
+                    <th style="width: 200px;">تاریخ</th>
+                    <th style="width: 200px;">زمان شروع</th>
+                    <th style="width: 200px;">زمان پایان</th>
+                    <th style="width: 100px;">وضعیت</th>
                 </tr>
             </thead>
             <tbody>
                 {% for appointment in appointments %}
                     <tr>
                         <td>{{ appointment.shop.name }}</td>
-                        <td>{{ appointment.service.name }}</td>
+                        <td>{{ appointment|get_services }}</td>
                         <td>{{ appointment.barber.username }}</td>
-                        <td>{{ appointment.start_time }}</td>
-                        <td>{{ appointment.end_time }}</td>
+                        <td>{{ appointment.start_time|j_date }}</td>
+                        <td>{{ appointment.start_time|j_time }}</td>
+                        <td>{{ appointment.end_time|j_time }}</td>
                         <td>{{ appointment.get_status_display }}</td>
                     </tr>
                 {% endfor %}
@@ -35,5 +36,4 @@
         <p>شما هیچ نوبت فعالی ندارید.</p>
     {% endif %}
     <a href="{% url 'account:customer_profile' %}">بازگشت به پروفایل</a> | 
-</body>
-</html>
+    {% endblock %}

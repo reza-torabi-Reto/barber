@@ -1,3 +1,51 @@
+
+PAGES MANAGER:
+
+-register manager: ->ok
+-Login and Logout -> ok
+
+-profile:
+    - show info manager [nikname, phone,email, avatar]
+    - show my shops [name(link to manage-page), appointments]
+    - buttom create shop
+    - buttom edite profile
+
+-edite_profile: [firstname, lastname, phone, email, bio, avatar] -> ok
+
+-create_shop: [name, address, phone] -> ok
+
+-manage_shop: -> ok
+    - show info shop [name-code, manager-name, phone, address, register-date]
+    - show my barbers
+    - show my services
+    - buttom create barber
+    - buttom create service
+    - buttom settings work-days
+
+-edit_shop: [name, address, phone, about, status] !!
+
+-create_barber: [username, password]
+
+-create_service: [name, duration, price]
+
+-edite_service: [name, duration, price]
+
+-appointments: [date, time, customer, barber, status]
+
+-confirm_appointment/id: [date, time,customer-nikname, barber-name, services, total-price, status]
+-list_barber: [name, avatar, buttom(remove)] #no need
+-list_service: [name, duration, price, buttom(remove, edite)] #no need
+-list_customer: [name, phone, buttom(remove)] 
+-delete_customer: ->ok
+-massage_customer: -
+
+
+
+
+
+
+
+
 manager:
 - manage of profile :
     - edite info -> ok
@@ -17,20 +65,12 @@ customer:
     - edite info -> ok
     - recover password ->
 - select appointment -> ok
-- views appointments
-
-
-
-
-
-
-
-
-
-
-
-
-
+- views appointments:
+    - create profile shop
+    - show barber better
+    - remove days of full or hollyday
+    - convert date to irani
+    
 
 مدیر:
 1.ایجاد(ویرایش، حذف و ...) آرایشگاه
@@ -51,3 +91,47 @@ customer:
 2.مدیریت آرایشگاه های عضو شده(لغو عضویت و...)
 3. فرایند گرفتن نوبت (انتخاب آرایشگر، خدمات، زمان و...)
 3. دیدن تاریخچه نوبت ها
+
+-----------
+
+# @login_required
+# def list_barber(request, shop_id):
+#     if request.user.role != 'manager':
+#         return redirect('home')
+
+#     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
+#     barbers = CustomUser.objects.filter(role='barber', barber_profile__shop=shop)
+#     return render(request, 'salon/list_barber.html', {'shop': shop, 'barbers': barbers})
+
+# @login_required
+# def service_list(request, shop_id):
+#     if request.user.role != 'manager':
+#         return redirect('home')
+
+#     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
+#     services = Service.objects.filter(shop=shop)
+#     return render(request, 'salon/service_list.html', {'shop': shop, 'services': services})
+
+
+# در صفحه book_appointment:
+// آپدیت زمان‌های آزاد
+        function updateAvailableTimes(selectedServices) {
+            const barberId = document.getElementById('id_barber').value;
+            const date = document.getElementById('id_date').value;
+            if (barberId && date && selectedServices.length > 0) {
+                const serviceParams = selectedServices.map(id => `services=${id}`).join('&');
+                fetch(`/salon/get-available-times/?shop_id={{ shop.id }}&barber_id=${barberId}&date=${date}&${serviceParams}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const timeSelect = document.getElementById('id_time');
+                        timeSelect.innerHTML = '<option value="">---------</option>';
+                        data.times.forEach(time => {
+                            const option = document.createElement('option');
+                            option.value = time;
+                            option.text = time;
+                            timeSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error fetching available times:', error));
+            }
+        }

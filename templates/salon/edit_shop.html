@@ -1,14 +1,12 @@
-<!-- salon/templates/salon/edit_service.html -->
+<!-- salon/edit_shop.html -->
 {% extends 'base.html' %}
 {% block title %}پروفایل{% endblock %}
 {% block content %}
-<h3>آرایشگاه: {{service.shop}}</h3>    
-<h3>آرایشگر: {{service.barber}}</h3>
-    <p></p>
+    <h1>ویرایش اطلاعات {{ shop.name }}</h1>
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
         <button type="submit">ذخیره تغییرات</button>
     </form>
-    <a href="{% url 'salon:manage_shop' shop.id %}">بازگشت به مدیریت آرایشگاه</a>
+    <a href="{% url 'salon:manage_shop' shop.id %}">بازگشت</a>
     {% endblock %}

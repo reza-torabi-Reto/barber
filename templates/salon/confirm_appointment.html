@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}پروفایل{% endblock %}
+{% block content %}
+    <div class="container mt-5">
+        <h1>تأیید نوبت - {{ shop.name }}</h1>
+        <h3>جزئیات نوبت</h3>
+        <p><strong>آرایشگاه:</strong> {{ shop.name }}</p>
+        <p><strong>آرایشگر:</strong> {{ barber.username }}</p>
+        <p><strong>خدمات:</strong> {{ services|join:", " }}</p>
+        <p><strong>قیمت کل:</strong> {{ total_price }} تومان</p>
+        <p><strong>مدت زمان کل:</strong> {{ total_duration }} دقیقه</p>
+        <p><strong>تاریخ و زمان:</strong> {{ start_time|date:"l j F Y" }}، {{ start_time|time:"H:i" }} - {{ end_time|time:"H:i" }}</p>
+
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">تأیید نوبت</button>
+            <a href="{% url 'salon:select_date_time' %}" class="btn btn-danger">لغو</a>
+        </form>
+    </div>
+    {% endblock %}

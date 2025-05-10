@@ -1,16 +1,37 @@
-<!-- account/templates/account/edit_manager_profile.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>ویرایش پروفایل مدیر</title>
-</head>
-<body>
-    <h1>ویرایش پروفایل</h1>
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}پروفایل{% endblock %}
+{% block content %}
+<h1>ویرایش پروفایل</h1>
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <div class="form-group">
+        {% if form.instance.avatar %}
+            <p>آواتار فعلی: <img src="{{ form.instance.get_avatar_url }}" alt="آواتار فعلی" style="max-width: 100px;"></p>
+        {% else %}
+        <p>آواتار فعلی: <img src="{% static 'images/default_avatar.png' %}" alt="آواتار پیشفرض" style="max-width: 100px;"></p>
+        {% endif %}
+    </div>
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        {{ form.as_p }}
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    {% for error in field.errors %}
+                        <p class="error">{{ error }}</p>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        {% endfor %}
         <button type="submit">ذخیره تغییرات</button>
     </form>
     <a href="{% url 'account:profile' %}">بازگشت به پروفایل</a>
-</body>
-</html>
+    {% endblock %}

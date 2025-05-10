@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block title %}پروفایل{% endblock %}
+{% block content %} 
+<p>{{ appointment.start_time|j_date }} {{ appointment.start_time|j_time }}-{{ appointment.end_time|j_time }}</p>
+
+<p>نام مشتری: {{ appointment.customer.nickname }}</p>
+<p>شماره تماس مشتری:{{ appointment.customer.phone }}</p>
+<p>نام آرایشگر: {{ appointment.barber.username }}</p>
+<p>خدمات:</p>
+<p>{{ appointment|get_services }}</p>
+<p>وضعیت: {{ appointment.get_status_display }}</p>
+
+{% if appointment.status == 'pending' %}
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">تایید نوبت</button>
+</form>
+{% endif %}
+<a href="{% url 'salon:manage_shop' appointment.shop_id %}">صفحه مدیریت</a>
+{% endblock %}

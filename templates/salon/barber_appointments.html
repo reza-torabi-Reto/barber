@@ -1,10 +1,7 @@
 <!-- templates/salon/barber_appointments.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>نوبت‌های من</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% block title %}پروفایل{% endblock %}
+{% block content %}
     <h1>نوبت‌های من</h1>
     {% if appointments %}
         <table>
@@ -33,5 +30,4 @@
         <p>شما هیچ نوبت فعالی ندارید.</p>
     {% endif %}
     <a href="{% url 'account:profile' %}">بازگشت به پروفایل</a>
-</body>
-</html>
+    {% endblock %}

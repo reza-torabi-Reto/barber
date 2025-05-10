@@ -1,33 +1,55 @@
-<!-- account/templates/account/customer_list.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>مشتریان {{ shop.name }}</title>
-</head>
-<body>
-    <h1>مشتریان {{ shop.name }}</h1>
+{% extends 'base.html' %}
+{% load custom_filters %} 
 
-    <h2>جستجوی مشتری</h2>
-    <form method="get">
-        <input type="text" name="search" value="{{ search_query }}" placeholder="نام کاربری یا شماره تلفن">
-        <button type="submit">جستجو</button>
-    </form>
 
-    {% if search_query and not customers_with_joined %}
-        <p>مشتری‌ای با این مشخصات پیدا نشد.</p>
-    {% endif %}
+{% block title %}پروفایل{% endblock %}
+{% block navbar%}
 
-    <h2>فهرست مشتریان</h2>
-    {% if customers_with_joined %}
-        <ul>
-        {% for customer, joined_at in customers_with_joined %}
-            <li>{{ customer.username }} ({{ customer.phone }}) - عضویت از: {{ joined_at }}</li>
+{% endblock %}
+{% block content %}
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
         {% endfor %}
-        </ul>
-    {% else %}
-        <p>در حال حاضر مشتری‌ای برای این آرایشگاه ثبت نشده است.</p>
-    {% endif %}
+    </ul>
+{% endif %}
 
-    <a href="{% url 'account:profile' %}">بازگشت به پروفایل</a>
-</body>
-</html>
+<!-- فرم جستجو -->
+<form method="GET" action="{% url 'account:customer_list' shop.id %}" class="d-flex">
+    <input type="text" name="search" value="{{ search_query }}" placeholder="جستجو...">
+    <input type="hidden" name="show_active" value="{{ show_active|yesno:'true,false' }}">
+    <button type="submit">جستجو</button>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>نام کاربری</th>
+            <th>نام خانوادگی</th>
+            <th>تلفن</th>
+            <th>تاریخ عضویت</th>
+            <th>وضعیت</th>
+            <th>عملیات</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for customer_shop, customer, joined_at in customers_with_joined %}
+            <tr>
+                <td>{{ customer.username }}</td>
+                <td>{{ customer.lastname }}</td>
+                <td>{{ customer.phone }}</td>
+                <td>{{ joined_at|j_date }}</td>
+                <td>{{ customer_shop.is_active|yesno:"فعال,غیرفعال" }}</td>
+                <td>
+                    <a href="{% url 'account:toggle_customer_status' customer.id shop.id %}">
+                        {{ customer_shop.is_active|yesno:"غیرفعال,فعال" }}
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<br>
+<a href="{% url 'salon:manage_shop' shop.id %}">صفحه مدیریت</a>
+{% endblock %}

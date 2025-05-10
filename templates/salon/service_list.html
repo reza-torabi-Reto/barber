@@ -1,10 +1,7 @@
 <!-- salon/service_list.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>خدمات {{ shop.name }}</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% block title %}پروفایل{% endblock %}
+{% block content %}
     <h1>خدمات {{ shop.name }}</h1>
     <a href="{% url 'salon:create_service' shop.id %}">ثبت خدمت جدید</a>
     <br><br>
@@ -20,5 +17,4 @@
     {% endif %}
     
     <a href="{% url 'salon:manage_shop' shop.id %}">بازگشت به مدیریت آرایشگاه</a>
-</body>
-</html>
+    {% endblock %}

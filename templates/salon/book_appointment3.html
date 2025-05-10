@@ -1,0 +1,99 @@
+<!-- salon/book_appointment.html -->
+{% extends 'base.html' %}
+{% block title %}پروفایل{% endblock %}
+{% block content %}
+<h1>رزرو نوبت در {{ shop.name }}</h1>
+    <form method="post" id="appointment-form">
+        {% csrf_token %}
+        {% if form.errors %}
+            <div style="color: red;">
+                <p>لطفاً خطاهای زیر را برطرف کنید:</p>
+                <ul>
+                    {% for field, errors in form.errors.items %}
+                        <li>{{ field }}: {{ errors }}</li>
+                    {% endfor %}
+                    {% if form.non_field_errors %}
+                        <li>{{ form.non_field_errors }}</li>
+                    {% endif %}
+                </ul>
+            </div>
+        {% endif %}
+        <p>
+            <!-- این بخش رو نمیخوام اینجوری باشه میخوام خدمات هر ارایشگر زیر اسم خودش باشه -->>
+            <label>سرویس‌ها:</label><br>
+            {% for service in form.services.field.queryset %}
+                <div class="service-container">
+                    <input type="checkbox" name="services" value="{{ service.id }}" id="service-{{ service.id }}"
+                           onchange="updateTotals()">
+                    <label for="service-{{ service.id }}">{{ service.name }}</label>
+                </div>
+            {% endfor %}
+            {{ form.services.errors }}
+            <!-- --- -->
+        </p>
+        <p>
+            <h3>انتخاب آرایشگر</h3>
+            {% for barber in form.barber.field.queryset %}
+                <div class="form-check" style="text-align: right; width: 250px;">
+                    <label class="form-check-label" for="barber_{{ barber.id }}">{{ barber.nickname }}</label>
+                    <input class="form-check-input" type="radio" name="barber" id="barber_{{ barber.id }}" value="{{ barber.id }}" {% if form.barber.initial == barber.id %}checked{% endif %}>
+                </div>
+            {% endfor %}
+            {% if form.barber.errors %}
+                <div class="text-danger">{{ form.barber.errors }}</div>
+            {% endif %}
+        </p>
+        <p>
+            <strong>قیمت کل:</strong> <span id="total-price">0</span> تومان<br>
+            <strong>مدت زمان کل:</strong> <span id="total-duration">0</span> دقیقه
+        </p>
+        <button type="submit">انتخاب تاریخ و زمان</button>
+    </form>
+    <a href="{% url 'account:customer_profile' %}">بازگشت به پروفایل</a>
+
+    <script>
+        // گرفتن اطلاعات سرویس‌ها
+        const servicesData = [];
+        fetch(`/salon/get_shop_details/?shop_id={{ shop.id }}`)
+            .then(response => response.json())
+            .then(data => {
+                data.services.forEach(service => {
+                    servicesData[service.id] = {
+                        price: parseFloat(service.price),
+                        duration: parseInt(service.duration)
+                    };
+                });
+                console.log('Services data:', servicesData);
+                updateTotals(); // آپدیت اولیه بعد از لود داده‌ها
+            })
+            .catch(error => console.error('Error fetching shop details:', error));
+
+        // محاسبه قیمت و مدت زمان کل
+        function updateTotals() {
+            let totalPrice = 0;
+            let totalDuration = 0;
+            const selectedServices = [];
+            document.querySelectorAll('input[name="services"]:checked').forEach(checkbox => {
+                const serviceId = checkbox.value;
+                if (servicesData[serviceId]) {
+                    totalPrice += servicesData[serviceId].price;
+                    totalDuration += servicesData[serviceId].duration;
+                    selectedServices.push(serviceId);
+                }
+            });
+            document.getElementById('total-price').textContent = totalPrice.toFixed(0); // بدون اعشار
+            document.getElementById('total-duration').textContent = totalDuration;
+            updateAvailableTimes(selectedServices);
+        }
+
+        // رویدادها
+        document.querySelectorAll('input[name="services"]').forEach(checkbox => {
+            checkbox.addEventListener('change', updateTotals);
+        });
+        document.getElementById('id_barber').addEventListener('change', updateTotals);
+        document.getElementById('id_date').addEventListener('change', updateTotals);
+
+        // آپدیت اولیه
+        updateTotals();
+    </script>
+{% endblock %}

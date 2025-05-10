@@ -1,37 +1,59 @@
 <!-- account/templates/account/customer_profile.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>پروفایل مشتری</title>
-</head>
-<body>
-    <h1>پروفایل شما</h1>
-    <p>خوش آمدید، {{ user.username }}!</p>
-    <p>نام: {{ user.first_name|default:"ثبت نشده" }}</p>
-    <p>نام خانوادگی: {{ user.last_name|default:"ثبت نشده" }}</p>
-    <p>ایمیل: {{ user.email|default:"ثبت نشده" }}</p>
-    <p>نقش: {{ user.role|default:"-" }}</p>
-    <p>شماره تلفن: {{ user.phone|default:"ثبت نشده" }}</p>
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block title %}پروفایل{% endblock %}
+{% block navbar %}
+<form method="post" action="{% url 'account:logout' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-secondary">خروج</button>
+</form>
+{% endblock %}
 
-    <a href="{% url 'account:edit_customer_profile' %}">ویرایش پروفایل</a>
-    <br><br>
+{% block content %}
 
-    <h2>جستجوی آرایشگاه</h2>
-    <form method="get">
-        <input type="text" name="search" value="{{ search_query }}" placeholder="نام یا کد آرایشگاه را وارد کنید">
-        <button type="submit">جستجو</button>
+<div class="container mt-5">
+        <h3>پروفایل شما</h3>
+        <p>خوش آمدید، {{ user.nickname }}!</p>
+        <p>نام کاربری: {{ user.username }}</p>
+        <p>ایمیل: {{ user.email|default:"ثبت نشده" }}</p>
+        <p>نقش: {{ user.role|default:"-" }}</p>
+        <p>شماره تلفن: {{ user.phone|default:"ثبت نشده" }}</p>
+
+        <a href="{% url 'account:edit_customer_profile' %}" class="btn btn-primary">ویرایش پروفایل</a> 
+        <a href="{% url 'salon:customer_appointments' %}"  class="btn btn-info ">نمایش نوبت ها</a>
+
+        <br><br>
+        <h3>آرایشگاه‌های شما</h3>
+        {% if customer_shops %}
+    <ul class="list-group mb-2 pr-0">
+    {% for customer_shop in customer_shops %}
+        <li class="list-group-item">
+            {{ customer_shop.shop.name }} (کد: {{ customer_shop.shop.referral_code }}) - عضویت از: {{ customer_shop.joined_at|j_date }}
+            <a href="{% url 'salon:shop_detail' customer_shop.shop.id %}" class="btn btn-info btn-sm">مشخصات</a>
+            <a href="{% url 'salon:book_appointment' customer_shop.shop.id %}" class="btn btn-primary btn-sm">رزرو نوبت</a>
+            <a href="{% url 'account:leave_shop' customer_shop.shop.id %}" class="btn btn-danger btn-sm">لغو عضویت</a>
+        </li>
+    {% endfor %}
+    </ul>
+    {% else %}
+        <p>شما هنوز عضو هیچ آرایشگاهی نشده‌اید.</p>
+    {% endif %}
+        
+    <h3>جستجوی آرایشگاه</h3>
+    <form method="get" action="{% url 'account:customer_profile' %}" class="d-flex">
+        <input type="text" name="search" value="{{ search_query }}" placeholder="نام یا کد آرایشگاه را وارد کنید" class="form-control d-inline w-50">
+        <button type="submit" class="btn btn-secondary">جستجو</button>
     </form>
-
     {% if search_results %}
-        <h3>نتایج جستجو:</h3>
-        <ul>
+        <h5>نتایج جستجو:</h5>
+        <ul class="list-group">
         {% for shop in search_results %}
-            <li>
+            <li class="list-group-item">
                 {{ shop.name }} (کد: {{ shop.referral_code }})
                 {% if shop.id in customer_shop_ids %}
                     <span>(شما عضو هستید)</span>
                 {% else %}
-                    <a href="{% url 'account:join_shop' shop.id %}">عضویت</a> 
+                    <a href="{% url 'account:join_shop' shop.id %}" class="btn btn-success btn-sm">عضویت</a>
                 {% endif %}
             </li>
         {% endfor %}
@@ -40,25 +62,5 @@
         <p>آرایشگاهی با این مشخصات پیدا نشد.</p>
     {% endif %}
 
-    <h2>آرایشگاه‌های شما</h2>
-    {% if customer_shops %}
-        <ul>
-        {% for customer_shop in customer_shops %}
-            <li>
-                {{ customer_shop.shop.name }} (کد: {{ customer_shop.shop.referral_code }}) - عضویت از: {{ customer_shop.joined_at }}
-                <a href="{% url 'account:leave_shop' customer_shop.shop.id %}">لغو عضویت</a> |
-                <a href="{% url 'salon:book_appointment' customer_shop.shop.id %}">رزرو نوبت</a>
-
-            </li>
-        {% endfor %}
-        </ul>
-    {% else %}
-        <p>شما هنوز عضو هیچ آرایشگاهی نشده‌اید.</p>
-    {% endif %}
-
-    <form method="post" action="{% url 'account:logout' %}">
-        {% csrf_token %}
-        <button type="submit">خروج</button>
-    </form>
-</body>
-</html>
+    </div>
+    {% endblock %}

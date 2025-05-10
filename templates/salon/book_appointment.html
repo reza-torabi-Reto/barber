@@ -1,126 +1,110 @@
-<!-- salon/book_appointment.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>رزرو نوبت - {{ shop.name }}</title>
-    <style>
-        .service-container { margin-bottom: 10px; }
-    </style>
-</head>
-<body>
-    <h1>رزرو نوبت در {{ shop.name }}</h1>
+<!-- salon/templates/salon/book_appointment.html -->
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}رزرو نوبت - {{ shop.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>رزرو نوبت - {{ shop.name }}</h1>
+    
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
     <form method="post" id="appointment-form">
         {% csrf_token %}
-        {% if form.errors %}
-            <div style="color: red;">
-                <p>لطفاً خطاهای زیر را برطرف کنید:</p>
-                <ul>
-                    {% for field, errors in form.errors.items %}
-                        <li>{{ field }}: {{ errors }}</li>
-                    {% endfor %}
-                    {% if form.non_field_errors %}
-                        <li>{{ form.non_field_errors }}</li>
-                    {% endif %}
-                </ul>
-            </div>
-        {% endif %}
-        <p>
-            <label>سرویس‌ها:</label><br>
-            {% for service in form.services.field.queryset %}
-                <div class="service-container">
-                    <input type="checkbox" name="services" value="{{ service.id }}" id="service-{{ service.id }}"
-                           onchange="updateTotals()">
-                    <label for="service-{{ service.id }}">{{ service.name }}</label>
+        <div class="row">
+            {% for barber in barbers %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <div class="form-check">
+                                <input class="form-check-input barber-radio" type="radio" 
+                                       name="barber_id" value="{{ barber.id }}" 
+                                       id="barber_{{ barber.id }}" required
+                                       onchange="toggleServices({{ barber.id }})">
+                                <label class="form-check-label" for="barber_{{ barber.id }}">
+                                    {{ barber.nickname }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">خدمات</h5>
+                            <div class="services-list" id="services_{{ barber.id }}" style="display: none;">
+                                {% for service in barber.barber_profile.services.all %}
+                                    <div class="form-check">
+                                        <input class="form-check-input service-checkbox" 
+                                               type="checkbox" 
+                                               name="services" 
+                                               value="{{ service.id }}"
+                                               data-price="{{ service.price }}"
+                                               data-duration="{{ service.duration }}"
+                                               id="service_{{ service.id }}"
+                                               onchange="updateTotals()">
+                                        <label class="form-check-label" for="service_{{ service.id }}">
+                                            {{ service.name }} ({{ service.price }} تومان، {{ service.duration }} دقیقه)
+                                        </label>
+                                    </div>
+                                {% empty %}
+                                    <p>هیچ خدمتی برای این آرایشگر ثبت نشده است.</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12">
+                    <p class="text-muted">هیچ آرایشگر فعالی در این آرایشگاه یافت نشد.</p>
                 </div>
             {% endfor %}
-            {{ form.services.errors }}
-        </p>
-        <p>
-            <label for="{{ form.barber.id_for_label }}">آرایشگر:</label>
-            {{ form.barber }}
-        </p>
-        <p>
-            <label for="{{ form.date.id_for_label }}">تاریخ:</label>
-            {{ form.date }}
-        </p>
-        <p>
-            <label for="{{ form.time.id_for_label }}">زمان:</label>
-            {{ form.time }}
-        </p>
-        <p>
-            <strong>قیمت کل:</strong> <span id="total-price">0</span> تومان<br>
-            <strong>مدت زمان کل:</strong> <span id="total-duration">0</span> دقیقه
-        </p>
-        <button type="submit">رزرو نوبت</button>
+        </div>
+
+        <div class="mt-4">
+            <h4>جمع کل:</h4>
+            <p>قیمت کل: <span id="total-price">0</span> تومان</p>
+            <p>مدت زمان کل: <span id="total-duration">0</span> دقیقه</p>
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-3">مرحله بعد</button>
+        <a href="{% url 'account:customer_profile' %}" class="btn btn-secondary mt-3">بازگشت</a>
     </form>
-    <a href="{% url 'account:customer_profile' %}">بازگشت به پروفایل</a>
+</div>
 
-    <script>
-        // گرفتن اطلاعات سرویس‌ها
-        const servicesData = [];
-        fetch(`/salon/get_shop_details/?shop_id={{ shop.id }}`)
-            .then(response => response.json())
-            .then(data => {
-                data.services.forEach(service => {
-                    servicesData[service.id] = {
-                        price: parseFloat(service.price),
-                        duration: parseInt(service.duration)
-                    };
-                });
-                console.log('Services data:', servicesData);
-                updateTotals(); // آپدیت اولیه بعد از لود داده‌ها
-            })
-            .catch(error => console.error('Error fetching shop details:', error));
+<script>
+function toggleServices(barberId) {
+    // مخفی کردن همه لیست‌های خدمات
+    document.querySelectorAll('.services-list').forEach(list => {
+        list.style.display = 'none';
+    });
+    
+    // نمایش لیست خدمات آرایشگر انتخاب‌شده
+    const servicesList = document.getElementById(`services_${barberId}`);
+    if (servicesList) {
+        servicesList.style.display = 'block';
+    }
 
-        // محاسبه قیمت و مدت زمان کل
-        function updateTotals() {
-            let totalPrice = 0;
-            let totalDuration = 0;
-            const selectedServices = [];
-            document.querySelectorAll('input[name="services"]:checked').forEach(checkbox => {
-                const serviceId = checkbox.value;
-                if (servicesData[serviceId]) {
-                    totalPrice += servicesData[serviceId].price;
-                    totalDuration += servicesData[serviceId].duration;
-                    selectedServices.push(serviceId);
-                }
-            });
-            document.getElementById('total-price').textContent = totalPrice.toFixed(0); // بدون اعشار
-            document.getElementById('total-duration').textContent = totalDuration;
-            updateAvailableTimes(selectedServices);
-        }
+    // ریست کردن چک‌باکس‌های خدمات آرایشگران دیگر
+    document.querySelectorAll('.service-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+    });
 
-        // آپدیت زمان‌های آزاد
-        function updateAvailableTimes(selectedServices) {
-            const barberId = document.getElementById('id_barber').value;
-            const date = document.getElementById('id_date').value;
-            if (barberId && date && selectedServices.length > 0) {
-                const serviceParams = selectedServices.map(id => `services=${id}`).join('&');
-                fetch(`/salon/get-available-times/?shop_id={{ shop.id }}&barber_id=${barberId}&date=${date}&${serviceParams}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        const timeSelect = document.getElementById('id_time');
-                        timeSelect.innerHTML = '<option value="">---------</option>';
-                        data.times.forEach(time => {
-                            const option = document.createElement('option');
-                            option.value = time;
-                            option.text = time;
-                            timeSelect.appendChild(option);
-                        });
-                    })
-                    .catch(error => console.error('Error fetching available times:', error));
-            }
-        }
+    // به‌روزرسانی جمع کل
+    updateTotals();
+}
 
-        // رویدادها
-        document.querySelectorAll('input[name="services"]').forEach(checkbox => {
-            checkbox.addEventListener('change', updateTotals);
-        });
-        document.getElementById('id_barber').addEventListener('change', updateTotals);
-        document.getElementById('id_date').addEventListener('change', updateTotals);
+function updateTotals() {
+    let totalPrice = 0;
+    let totalDuration = 0;
 
-        // آپدیت اولیه
-        updateTotals();
-    </script>
-</body>
-</html>
+    // جمع‌آوری خدمات انتخاب‌شده
+    document.querySelectorAll('.service-checkbox:checked').forEach(checkbox => {
+        totalPrice += parseFloat(checkbox.dataset.price);
+        totalDuration += parseInt(checkbox.dataset.duration);
+    });
+
+    // نمایش مقادیر
+    document.getElementById('total-price').textContent = totalPrice.toLocaleString('fa-IR');
+    document.getElementById('total-duration').textContent = totalDuration;
+}
+</script>
+{% endblock %}

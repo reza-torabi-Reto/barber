@@ -1,11 +1,8 @@
+{% extends 'base.html' %}
 <!-- account/templates/account/barber_profile.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>پروفایل آرایشگر</title>
-</head>
-<body>
-    <h1>پروفایل شما</h1>
+{% block title %}پروفایل{% endblock %}
+{% block content %}
+<h1>پروفایل شما</h1>
     <p>خوش آمدید، {{ user.username }}!</p>
     <p>نام: {{ user.first_name|default:"ثبت نشده" }}</p>
     <p>نام خانوادگی: {{ user.last_name|default:"ثبت نشده" }}</p>
@@ -27,5 +24,4 @@
         {% csrf_token %}
         <button type="submit">خروج</button>
     </form>
-</body>
-</html>
+{% endblock %}

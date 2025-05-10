@@ -1,10 +1,7 @@
 <!-- account/templates/account/manager_signup.html -->
-<!DOCTYPE html>
-<html>
-<head>
-    <title>ثبت‌نام مدیر</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% block title %}پروفایل{% endblock %}
+{% block content %}
     <h1>ثبت‌نام به عنوان مدیر</h1>
     <form method="post">
         {% csrf_token %}
@@ -12,5 +9,4 @@
         <button type="submit">ثبت‌نام</button>
     </form>
     <p>قبلاً ثبت‌نام کرده‌اید؟ <a href="{% url 'account:login' %}">وارد شوید</a></p>
-</body>
-</html>
+{% endblock %}

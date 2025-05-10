@@ -4,18 +4,28 @@ from django.utils import timezone
 from django.db.models import Sum
 from django.core.exceptions import ValidationError
 from datetime import timedelta 
+# from extensions.utils import  jalali_convert
 from .utils import generate_referral_code
 
 class Shop(models.Model):
+    STATUS_CHOISE = (
+        ('open', 'باز'),
+        ('close', 'بسته'),
+        ('active', 'فعال'),
+        ('inactive', 'غیرفعال'),
+    )
+    
     manager = models.ForeignKey('account.CustomUser', on_delete=models.CASCADE, related_name='managed_shops', verbose_name="مدیر مسئول")
     name = models.CharField(max_length=100, verbose_name="نام آرایشگاه")
     referral_code = models.CharField(max_length=8, unique=True, verbose_name="کد یکتای جستجو")
     address = models.TextField(verbose_name="آدرس دقیق")
     phone = models.CharField(max_length=15, verbose_name="شماره تماس")
-    status = models.CharField(max_length=10, choices=[('active', 'فعال'), ('inactive', 'غیرفعال')], default='active', verbose_name="وضعیت")
-    latitude = models.FloatField(null=True, blank=True, verbose_name="عرض جغرافیایی")
-    longitude = models.FloatField(null=True, blank=True, verbose_name="طول جغرافیایی")
-
+    status = models.CharField(max_length=10, choices=STATUS_CHOISE, default='active', verbose_name="وضعیت")
+    create_date = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
+    
+    # latitude = models.FloatField(null=True, blank=True, verbose_name="عرض جغرافیایی")
+    # longitude = models.FloatField(null=True, blank=True, verbose_name="طول جغرافیایی")
+    
     def __str__(self):
         return f"{self.name} ({self.referral_code})"
 
@@ -30,6 +40,7 @@ class Shop(models.Model):
 
 class Service(models.Model):
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE, related_name='services', verbose_name="آرایشگاه")
+    barber = models.ForeignKey('account.BarberProfile', on_delete=models.SET_NULL, null=True, blank=True, related_name='services', verbose_name="آرایشگر")
     name = models.CharField(max_length=100, verbose_name="نام خدمت")
     duration = models.PositiveIntegerField(verbose_name="مدت زمان (دقیقه)")
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="قیمت (تومان)")
@@ -45,7 +56,7 @@ class CustomerShop(models.Model):
     customer = models.ForeignKey('account.CustomUser', on_delete=models.CASCADE, related_name='shop_memberships', verbose_name="مشتری")
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE, related_name='customer_memberships', verbose_name="آرایشگاه")
     joined_at = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ عضویت")
-
+    is_active = models.BooleanField(default=True)
     class Meta:
         unique_together = ('customer', 'shop')
         verbose_name = "عضویت مشتری"
