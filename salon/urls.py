@@ -20,6 +20,7 @@ urlpatterns = [
     # path('book-appointment/', views.book_appointment, name='book_appointment'),
     path('get_shop_details/', views.get_shop_details, name='get_shop_details'),
     path('customer-appointments/', views.customer_appointments, name='customer_appointments'),
+    path('shop/<int:shop_id>/customer-appointments/', views.shop_customer_appointments, name='shop_customer_appointments'),
     path('barber-appointments/', views.barber_appointments, name='barber_appointments'),
     path('shop/<int:shop_id>/appointments/', views.manager_appointments, name='manager_appointments'),
     path('book-appointment/<int:shop_id>/', views.book_appointment, name='book_appointment'),

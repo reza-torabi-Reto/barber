@@ -1,12 +1,52 @@
 <!-- salon/templates/salon/create_shop.html -->
 {% extends 'base.html' %}
-{% block title %}پروفایل{% endblock %}
+{% load static %}
+{% block title %}نوبت آرا | ایجاد آرایشگاه {{ user.nickname }}{% endblock %}
+
+{% block navleft %}
+<a href="{% url 'account:profile' %}" class="btn btn-secondary">بازگشت به پروفایل</a>
+<form method="post" action="{% url 'account:logout' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-secondary">خروج</button>
+</form>
+{% endblock %}
+{% block navright %}
+<div class="d-flex align-items-baseline justify-content-end">
+    <h4>نوبت آرا | ایجاد آرایشگاه {{ user.nickname }}</h4>
+</div>
+{% endblock %}
+
 {% block content %}
-    <h1>ایجاد آرایشگاه جدید</h1>
     <form method="post">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">ثبت</button>
+        <div class="row">
+            <div class="col-md-6">
+                <p>
+                    <label for="id_name">نام آرایشگاه:</label>
+                    <input type="text" class="form-control" name="name" maxlength="100" required="" id="id_name">
+                </p>
+            </div>
+            <div class="col-md-6">
+                <p>
+                    <label for="id_phone">شماره تماس:</label>
+                    <input type="text" class="form-control" name="phone" maxlength="15" required="" id="id_phone">
+                </p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <p>
+                    <label for="id_address">آدرس دقیق:</label>
+                    <textarea name="address" class="form-control" cols="40" rows="4" required="" id="id_address"></textarea>
+                  </p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col text-left">                
+                <p class="text-left">
+                <button type="submit" class="btn btn-primary">ثبت آرایشگر</button>
+                </p>
+            </div>
+        </div>
     </form>
-    <a href="{% url 'account:profile' %}">بازگشت به صفحه مدیریت</a>
 {% endblock %}

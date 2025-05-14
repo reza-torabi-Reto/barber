@@ -1,29 +1,42 @@
 <!-- templates/salon/customer_appointments.html -->
 {% extends 'base.html' %}
-{% load custom_filters %} 
-{% block title %}پروفایل{% endblock %}
+{% block title %}نوبت آرا | نوبت های  {{ user.nickname }}{% endblock %}
+{% load custom_filters %}
+{% block navleft %}
+<a href="{% url 'account:customer_profile' %}" class="btn btn-secondary">بازگشت به پروفایل</a>
+<form method="post" action="{% url 'account:logout' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-secondary">خروج</button>
+</form>
+{% endblock %}
+{% block navright %}
+<div class="d-flex align-items-baseline justify-content-end">
+    <h4>نوبت آرا | نوبت‌های {{ user.nickname }}</h4>
+</div>
+{% endblock %}
 {% block content %}
-<body>
-    <h1>نوبت‌های من</h1>
+    <h5>نوبت‌های من:</h5>
     {% if appointments %}
-        <table>
+        <table class="w-100">
             <thead>
                 <tr>
-                    <th style="width: 100px;">آرایشگاه</th>
-                    <th style="width: 100px;">سرویس</th>
-                    <th style="width: 100px;">آرایشگر</th>
-                    <th style="width: 200px;">تاریخ</th>
-                    <th style="width: 200px;">زمان شروع</th>
-                    <th style="width: 200px;">زمان پایان</th>
-                    <th style="width: 100px;">وضعیت</th>
+                    <th></th>
+                    <th>آرایشگاه</th>
+                    <th>سرویس</th>
+                    <th>آرایشگر</th>
+                    <th>تاریخ</th>
+                    <th>زمان شروع</th>
+                    <th>زمان پایان</th>
+                    <th>وضعیت</th>
                 </tr>
             </thead>
             <tbody>
                 {% for appointment in appointments %}
                     <tr>
+                        <td>{{ forloop.counter }}</td> 
                         <td>{{ appointment.shop.name }}</td>
                         <td>{{ appointment|get_services }}</td>
-                        <td>{{ appointment.barber.username }}</td>
+                        <td>{{ appointment.barber.nickname }}</td>
                         <td>{{ appointment.start_time|j_date }}</td>
                         <td>{{ appointment.start_time|j_time }}</td>
                         <td>{{ appointment.end_time|j_time }}</td>
@@ -35,5 +48,4 @@
     {% else %}
         <p>شما هیچ نوبت فعالی ندارید.</p>
     {% endif %}
-    <a href="{% url 'account:customer_profile' %}">بازگشت به پروفایل</a> | 
     {% endblock %}

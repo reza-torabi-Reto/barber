@@ -1,12 +1,85 @@
-<!-- salon/create_service.html -->
+<!-- salon/templates/salon/create_service.html -->
 {% extends 'base.html' %}
-{% block title %}پروفایل{% endblock %}
+{% block title %}ایجاد خدمت{% endblock %}
+
+{% block navleft %}
+<a href="{% url 'salon:manage_shop' shop.id %}" class="btn btn-secondary">بازگشت به مدیریت</a>
+<form method="post" action="{% url 'account:logout' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-secondary">خروج</button>
+</form>
+{% endblock %}
+{% block navright %}
+<h4>{{ shop.name }} | ایجاد خدمت جدید</h4>
+{% endblock %}
+
 {% block content %}
-    <h1>ثبت خدمت جدید برای {{ shop.name }}</h1>
+<div class="container mt-5">
+    {% if not has_barbers %}
+        <div class="alert alert-warning">
+            هیچ آرایشگر فعالی برای این آرایشگاه وجود ندارد. لطفاً ابتدا یک آرایشگر اضافه کنید.
+            <a href="{% url 'salon:create_barber' shop.id %}" class="btn btn-primary btn-sm">افزودن آرایشگر</a>
+        </div>
+    {% endif %}
+
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            <ul>
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
     <form method="post">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">ثبت خدمت</button>
+        <div class="row">
+            <div class="col-md-6">
+                <p>
+                    <label for="id_name">{{ form.name.label }}:</label>
+                    <input type="text" class="form-control" name="name" id="id_name" value="{{ form.name.value|default:'' }}" required>
+                </p>
+            </div>
+            <div class="col-md-6">
+                <p>
+                    <label for="id_price">{{ form.price.label }}:</label>
+                    <input type="number" class="form-control" name="price" id="id_price" value="{{ form.price.value|default:'' }}" required>
+                </p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <p>
+                    <label for="id_duration">{{ form.duration.label }}:</label>
+                    <input type="number" class="form-control" name="duration" id="id_duration" value="{{ form.duration.value|default:'' }}" required>
+                </p>
+            </div>
+            <div class="col-md-6">
+                <p>
+                    <label for="id_barber">{{ form.barber.label }}:</label>
+                    <select class="form-control" name="barber" id="id_barber" required>
+                        {% for barber in form.barber.field.queryset %}
+                            <option value="{{ barber.id }}" {% if form.barber.value == barber.id %}selected{% endif %}>
+                                {{ barber.user.nickname }}
+                            </option>
+                        {% empty %}
+                            <option value="" disabled selected>هیچ آرایشگری در دسترس نیست</option>
+                        {% endfor %}
+                    </select>
+                </p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col text-left">
+                <button type="submit" class="btn btn-primary" {% if not has_barbers %}disabled{% endif %}>ثبت خدمت</button>
+            </div>
+        </div>
     </form>
-    <a href="{% url 'salon:manage_shop' shop.id %}">بازگشت به مدیریت آرایشگاه</a>
+</div>
 {% endblock %}

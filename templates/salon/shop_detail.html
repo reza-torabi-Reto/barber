@@ -1,39 +1,56 @@
 <!-- salon/templates/salon/shop_detail.html -->
 {% extends 'base.html' %}
+{% block title %}نوبت آرا | اطلاعات  {{ user.nickname }}{% endblock %}
 {% load custom_filters %}
-{% block title %}پروفایل{% endblock %}
-{% block navbar %}
+{% block navleft %}
 <a href="{% url 'account:customer_profile' %}" class="btn btn-secondary">بازگشت به پروفایل</a>
 <form method="post" action="{% url 'account:logout' %}">
     {% csrf_token %}
     <button type="submit" class="btn btn-secondary">خروج</button>
 </form>
 {% endblock %}
-
+{% block navright %}
+<div class="d-flex align-items-baseline justify-content-end">
+    <h4>نوبت آرا | {{ user.nickname }}</h4>
+</div>
+{% endblock %}
 {% block content %}
-    <div class="container mt-5">
-        <h3>اطلاعات آرایشگاه</h3>
-        <p><strong>نام:</strong> {{ shop_customer.shop.name }}</p>
-        <p><strong>کد:</strong> {{ shop_customer.shop.referral_code }}</p>
-        <p><strong>مدیر:</strong> {{ shop_customer.shop.manager.nickname|default:"ثبت نشده" }}</p>
-        <p><strong>شماره تماس:</strong> {{ shop_customer.shop.phone|default:"ثبت نشده" }}</p>
-        <p><strong>تاریخ عضویت:</strong> {{ shop_customer.joined_at|j_date }}</p>
-        <p><strong>آدرس:</strong> {{ shop_customer.shop.address|default:"ثبت نشده" }}</p>
-
-        <h3>آرایشگرها</h3>
-        {% if barbers %}
-            <ul class="list-group">
-                {% for barber in barbers %}
-                    <li class="list-group-item">{{ barber.nickname }}</li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p>هیچ آرایشگری ثبت نشده است.</p>
-        {% endif %}
-
-        <div class="mt-4">
+        <h4>اطلاعات آرایشگاه</h4>
+        <div class="row">
+            <div class="col-md-4">
+                <p><strong>نام:</strong> {{ shop_customer.shop.name }}</p>
+                <p><strong>کد:</strong> {{ shop_customer.shop.referral_code }}</p>
+            </div>
+            <div class="col-md-4">
+                <p><strong>مدیر:</strong> {{ shop_customer.shop.manager.nickname|default:"ثبت نشده" }}</p>
+                <p><strong>تاریخ عضویت:</strong> {{ shop_customer.joined_at|j_date }}</p>
+            </div>
+            <div class="col-md-4">
+                <p><strong>شماره تماس:</strong> {{ shop_customer.shop.phone|default:"ثبت نشده" }}</p>
+                <p><strong>آدرس:</strong> {{ shop_customer.shop.address|default:"ثبت نشده" }}</p>
+            </div>
+        </div>
+        <hr>
+        <div class="row mb-2">
+            <div class="col">                
+                <h4>آرایشگرها</h4>
+                {% if barbers %}
+                    <ul class="list-group">
+                        {% for barber in barbers %}
+                            <li class="list-group-item">{{ barber.nickname }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>هیچ آرایشگری ثبت نشده است.</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col text-left">
+            <a href="{% url 'salon:shop_customer_appointments' shop_customer.shop.id %}" class="btn btn-primary">نوبت ها</a>
             <a href="{% url 'salon:book_appointment' shop_customer.shop.id %}" class="btn btn-primary">رزرو نوبت</a>
             <a href="{% url 'account:leave_shop' shop_customer.shop.id %}" class="btn btn-danger">لغو عضویت</a>
+            </div>
         </div>
-    </div>
+
 {% endblock %}

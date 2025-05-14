@@ -1,13 +1,86 @@
 <!-- salon/create_barber.html -->
 {% extends 'base.html' %}
+{% load custom_filters %}
 {% block title %}پروفایل{% endblock %}
+
+{% block navleft %}
+<a href="{% url 'salon:manage_shop' shop.id %}" class="btn btn-secondary">بازگشت به مدیریت</a>
+<form method="post" action="{% url 'account:logout' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-secondary">خروج</button>
+</form>
+{% endblock %}
+{% block navright %}
+<h4>{{ shop.name }} | ایجاد آرایشگر</h4>
+{% endblock %}
+
 {% block content %}
-    <h1>{{shop.manager}}</h1>
-    <h1>ثبت آرایشگر جدید برای {{ shop.name }} - {{shop.referral_code}}</h1>
-    <form method="post" enctype="multipart/form-data">
+    <!-- نمایش خطاهای فرم -->
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            <ul>
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+<form method="post">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">ثبت آرایشگر</button>
+        <div class="row">
+            <div class="col-md-6">
+                <p>
+                    <label for="id_username">نام کاربری:</label>
+                    <input type="text"  class="form-control"  name="username" maxlength="150" autofocus="" required="" aria-describedby="id_username_helptext" id="id_username">
+                </p>
+            </div>
+            <div class="col-md-6">
+                <p>
+                    <label for="id_password1">شماره تماس:</label>
+                    <input type="text" class="form-control"  name="phone" maxlength="15" required="" id="id_phone">
+                  </p>                  
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <p>
+                  <label for="id_password1">گذرواژه:</label>
+                  <input type="password" class="form-control"  name="password1" autocomplete="new-password" aria-describedby="id_password1_helptext" id="id_password1">
+                  
+                </p>
+            </div>
+            <div class="col-md-6">
+                <p>
+                    <label for="id_password2">تأیید گذرواژه:</label>
+                    <input type="password" class="form-control"  name="password2" autocomplete="new-password" aria-describedby="id_password2_helptext" id="id_password2">
+                </p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <p>
+                    <label for="id_first_name">نام:</label>
+                    <input type="text" class="form-control"  name="first_name" maxlength="150" id="id_first_name">
+                  </p>
+            </div>
+            <div class="col-md-6">
+                <p>
+                    <label for="id_last_name">نام خانوادگی:</label>
+                    <input type="text" class="form-control"  name="last_name" maxlength="150" id="id_last_name">
+                  </p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col text-left">
+            <button type="submit" class="btn btn-primary">ثبت آرایشگر</button>
+            </div>
+        </div>
+
     </form>
-    <a href="{% url 'salon:manage_shop' shop.id %}">بازگشت به مدیریت آرایشگاه</a>
-    {% endblock %}
+{% endblock %}

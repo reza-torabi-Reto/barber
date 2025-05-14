@@ -2,113 +2,147 @@
 {% extends 'base.html' %}
 {% load custom_filters %}
 {% block title %}پروفایل{% endblock %}
+
+{% block navleft %}
+<a href="{% url 'account:profile' %}" class="btn btn-secondary">بازگشت به پروفایل</a>
+<form method="post" action="{% url 'account:logout' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-secondary">خروج</button>
+</form>
+{% endblock %}
+
+{% block navright %}
+<h4>{{ shop.name }} | مدیریت آرایشگاه</h4>
+{% endblock %}
+
 {% block content %}
 <div class="container">
-        <h1>مدیریت آرایشگاه: {{ shop.name }}</h1>
-        <p>کد یکتا: {{ shop.referral_code }}</p>
-        <p>مدیر: {{shop.manager.nickname}}</p>
-        <p>شماره تلفن: {{ shop.phone }}</p>
-        <p>نشانی: {{ shop.address }}</p>
-        <p>تاریخ ایجاد: {{shop.create_date|j_date}}</p>
-        <p>وضعیت: {{ shop.get_status_display }}</p>
-
-        <hr>
-
-        <h2>تنظیمات آرایشگاه</h2>
-        <a href="{% url 'salon:manage_schedule' shop.id %}" class="btn btn-primary">
-            مدیریت تنظیمات (روزهای کاری و ساعات)
-        </a>
-        <a href="{% url 'salon:edit_shop' shop.id %}" class="btn btn-primary">
-            مدیریت تنظیمات
-        </a>
-        <a href="{% url 'account:customer_list' shop.id %}" class="btn btn-primary">
-            فهرست مشتریان
-        </a>
-        <hr>
-
-        <h2>آرایشگرها</h2>
-        <a href="{% url 'salon:create_barber' shop.id %}" class="btn btn-success">
-            ایجاد آرایشگر جدید
-        </a>
-        <br><br>
-        {% if barbers %}
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>نام آرایشگر</th>
-                        <th>شماره تماس</th>
-                        <th>عملیات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for barber in barbers %}
-                        <tr>
-                            {% if barber.first_name or barber.last_name %}
-                            <td>{{ barber.nickname }}</td>
-                            {% else %}
-                            <td>...</td>
-                            {% endif %}
-                            <td>{{ barber.phone }}</td>
-                            <td>    
-                            <a href="{% url 'account:toggle_barber_status' barber.id shop.id %}" class="btn btn-primary btn-sm">
-                                {{ barber.barber_profile.status|yesno:"غیرفعال,فعال" }}
-                            </a>
-                                <a href="{% url 'salon:delete_barber' shop.id barber.id %}" class="btn btn-danger btn-sm">حذف</a>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>در حال حاضر آرایشگری ندارید.</p>
-        {% endif %}
-
-        <hr>
-
-        <h2>خدمات</h2>
-        <a href="{% url 'salon:create_service' shop.id %}" class="btn btn-success">
-            ایجاد خدمت جدید
-        </a>
-        <br><br>
-        {% if services %}
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>نام</th>
-                        <th>قیمت</th>
-                        <th>زمان</th>
-                        <th>آرایشگر</th>
-                        <th>عملیات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for service in services %}
-                        <tr>
-                            <td>{{ service.name }}</td>
-                            <td>{{ service.price }}</td>
-                            <td>{{ service.duration }}</td>
-                            {% if service.barber.user.first_name or service.barber.user.lasr_name  %}
-                            <td>{{ service.barber }}</td>
-                            {% else %}
-                            <td>...</td>
-                            {% endif %}
-                            <td>
-                                <a href="{% url 'salon:edit_service' shop.id service.id %}" class="btn btn-primary btn-sm">ویرایش</a>
-                                <a href="{% url 'salon:delete_service' shop.id service.id %}" class="btn btn-danger btn-sm">حذف</a>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>در حال حاضر خدمتی ندارید.</p>
-        {% endif %}
-
-        <hr>
-
-        <a href="{% url 'account:profile' %}" class="btn btn-secondary">بازگشت به پروفایل</a>
+    <div class="row">
+        <div class="col-md-6">
+            <p>کد یکتا: {{ shop.referral_code }}</p>
+            <p>مدیر: {{shop.manager.nickname}}</p>
+            <p>تاریخ ایجاد: {{shop.create_date|j_date}}</p>
+        </div>
+        
+        <div class="col-md-6">
+            <p>وضعیت: {{ shop.get_status_display }}</p>
+            <p>شماره تلفن: {{ shop.phone }}</p>
+            <p>نشانی: {{ shop.address }}</p>
+        </div>
     </div>
-
+    <hr>
+    <div class="row">
+        <div class="col-md-4">
+            <h4>تنظیمات آرایشگاه</h4>
+        </div>
+        <div class="col-md-8 d-flex justify-content-end">
+            <a href="{% url 'salon:manage_schedule' shop.id %}" class="btn btn-primary">
+                مدیریت تنظیمات (روزهای کاری و ساعات)
+            </a>
+            <a href="{% url 'salon:edit_shop' shop.id %}" class="btn btn-primary mr-2">
+                ویرایش اطلاعات
+            </a>
+            <a href="{% url 'account:customer_list' shop.id %}" class="btn btn-primary mr-2">
+                فهرست مشتریان
+            </a>
+        </div>
+    </div>
+    <hr>
+    <div class="row">    
+        <div class="col-md-6">
+            <h4>آرایشگرها</h4>
+        </div>
+        <div class="col-md-6 text-left">
+            <a href="{% url 'salon:create_barber' shop.id %}" class="btn btn-success">
+                ایجاد آرایشگر جدید
+            </a>
+        </div>
+        <div class="col">
+            {% if barbers %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>نام آرایشگر</th>
+                            <th>شماره تماس</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for barber in barbers %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td> 
+                                {% if barber.first_name or barber.last_name %}
+                                <td>{{ barber.nickname }}</td>
+                                {% else %}
+                                <td>...</td>
+                                {% endif %}
+                                <td>{{ barber.phone }}</td>
+                                <td>    
+                                <a href="{% url 'account:toggle_barber_status' barber.id shop.id %}" class="btn btn-primary btn-sm">
+                                    {{ barber.barber_profile.status|yesno:"غیرفعال,فعال" }}
+                                </a>
+                                    <a href="{% url 'salon:delete_barber' shop.id barber.id %}" class="btn btn-danger btn-sm">حذف</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                    <p>در حال حاضر آرایشگری ندارید.</p>
+                {% endif %}
+        </div>
+    </div> 
+    <hr>
+    <div class="row">
+        <div class="col-md-6">
+            <h4>خدمات</h4>
+        </div>
+        <div class="col-md-6 text-left">
+            <a href="{% url 'salon:create_service' shop.id %}" class="btn btn-success">
+                ایجاد خدمت جدید
+            </a>
+        </div>
+        <div class="col">
+            {% if services %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>نام</th>
+                            <th>قیمت</th>
+                            <th>زمان</th>
+                            <th>آرایشگر</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for service in services %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td> 
+                                <td>{{ service.name }}</td>
+                                <td>{{ service.price }}</td>
+                                <td>{{ service.duration }}</td>
+                                {% if service.barber.user.first_name or service.barber.user.lasr_name  %}
+                                <td>{{ service.barber }}</td>
+                                {% else %}
+                                <td>...</td>
+                                {% endif %}
+                                <td>
+                                    <a href="{% url 'salon:edit_service' shop.id service.id %}" class="btn btn-primary btn-sm">ویرایش</a>
+                                    <a href="{% url 'salon:delete_service' shop.id service.id %}" class="btn btn-danger btn-sm">حذف</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>در حال حاضر خدمتی ندارید.</p>
+            {% endif %}
+        </div>
+    </div>
+    </div>
+</div>
     <!-- Bootstrap JS, Popper.js, and jQuery -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>

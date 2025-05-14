@@ -1,24 +1,53 @@
 <!-- salon/templates/salon/select_date_time.html -->
 {% extends 'base.html' %}
-{% block title %}پروفایل{% endblock %}
+{% block title %}نوبت آرا | پرونده {{ user.nickname }}{% endblock %}
+{% load custom_filters %}
+
+{% block navleft %}
+<a href="{% url 'salon:book_appointment' shop.id %}" class="btn btn-secondary">بازگشت به مرحله قبل</a>
+<a href="{% url 'account:customer_profile' %}" class="btn btn-secondary">بازگشت به پروفایل</a>
+<form method="post" action="{% url 'account:logout' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-secondary">خروج</button>
+</form>
+{% endblock %}
+{% block navright %}
+<div class="d-flex align-items-baseline justify-content-end">
+    <h4>نوبت آرا | پرونده {{ user.nickname }}</h4>
+</div>
+{% endblock %}
+
 {% block content %}
-    <div class="container mt-5">
-        <h1>انتخاب تاریخ و زمان - {{ shop.name }}</h1>
+    <div class="row">
+        <h4 class="col mb-4">رزرو نوبت | انتخاب آرایشگر و خدمت</h4>
         {% if error %}
-            <div class="alert alert-warning">{{ error }}</div>
+        <div class="col">
+            <div class="alert alert-danger">{{ error }}</div>
+        </div>
         {% endif %}
-        <h3>سرویس‌ها:</h3>
-        <ul>
-            {% for service in services %}
-                <li>{{ service.name }} ({{ service.duration }} دقیقه)</li>
-            {% endfor %}
-        </ul>
-        <h3>آرایشگر: {{ barber.username }}</h3>
-        <h3>انتخاب روز:</h3>
-        <div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <p><strong>آرایشگر:</strong> {{ barber.nickname }}</p>
+        </div>
+        <div class="col-md-6">
+            <p><strong>سرویس‌ها:</strong></p>
+            <p>
+                <ul>
+                    {% for service in services %}
+                        <li>{{ service.name }} | ({{ service.duration }} دقیقه) - ({{service.price}} تومان)</li>
+                    {% endfor %}
+                </ul>
+            </p>
+        </div>
+    </div>
+    <hr>
+    <div class="row">
+        <h4 class="col-12 mb-2">انتخاب روز:</h4>
+        <div class="col-12">
             {% if dates %}
                 {% for date in dates %}
-                    <button type="button" class="btn btn-outline-primary date-btn" onclick="loadTimes('{{ date.gregorian_date|date:'Y-m-d' }}')">
+                    <button type="button" class="btn btn-outline-primary date-btn mb-2" onclick="loadTimes('{{ date.gregorian_date|date:'Y-m-d' }}')">
                         {{ date.day_of_week }}، {{ date.jalali_date }}
                     </button>
                 {% endfor %}
@@ -26,15 +55,16 @@
                 <p>هیچ روز آزادی برای رزرو در دسترس نیست.</p>
             {% endif %}
         </div>
-
-        <h3 class="mt-4">انتخاب زمان:</h3>
+    </div>
+    <hr>
+    <div class="row">
+        <h4 class="col-12 mt-2">انتخاب زمان:</h4>
+        <div class="col-12">
         <div id="time-slots" class="time-slot">
             <p>لطفاً یک روز انتخاب کنید.</p>
         </div>
-
-        <a href="{% url 'salon:book_appointment' shop.id %}" class="btn btn-secondary mt-3">بازگشت</a>
+        </div>
     </div>
-
     <script>
         function loadTimes(date) {
             const serviceIds = {{ appointment_data.services|safe }};

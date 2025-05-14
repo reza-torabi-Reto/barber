@@ -4,8 +4,12 @@ body {
     direction: rtl; /* راست به چپ */
 }
 .container {
-    margin-top: 20px;
     text-align: right
+}
+nav{
+    padding: 20px 10px;
+    background: #e4f0e6;
+    border-radius: .25rem;
 }
 .btn-primary {
     background-color: #007bff;

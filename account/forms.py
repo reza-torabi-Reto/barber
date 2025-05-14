@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import CustomUser, ManagerProfile, BarberProfile, CustomerProfile
-
+import re
 class ManagerSignUpForm(UserCreationForm):
     phone = forms.CharField(max_length=15, required=True)
     avatar = forms.ImageField(required=False)
@@ -39,25 +39,55 @@ class CustomerSignUpForm(UserCreationForm):
         return user
 
 class BarberSignUpForm(UserCreationForm):
-    phone = forms.CharField(max_length=15, required=True)
-    avatar = forms.ImageField(required=False)
-    bio = forms.CharField(widget=forms.Textarea, required=False)
+    phone = forms.CharField(max_length=15,required=True,label='شماره تلفن')
+    # phone = forms.CharField(
+    #     max_length=15,
+    #     required=True,
+    #     label='شماره تلفن',
+    #     help_text='شماره تلفن باید با 09 شروع شده و 11 رقم باشد (مثال: 09123456789)'
+    # )
 
     class Meta:
         model = CustomUser
-        fields = ('username','first_name', 'last_name', 'password1', 'password2', 'phone', 'avatar', 'bio')
+        fields = ('username', 'first_name', 'last_name', 'phone', 'password1', 'password2')
+        labels = {
+            'username': 'نام کاربری',
+            'first_name': 'نام',
+            'last_name': 'نام خانوادگی',
+            'password1': 'گذرواژه',
+            'password2': 'تأیید گذرواژه',
+        }
+
+    # def clean_phone(self):
+    #     phone = self.cleaned_data.get('phone')
+    #     if not phone:
+    #         raise forms.ValidationError('شماره تلفن الزامی است.')
+    #     if not re.match(r'^09\d{9}$', phone):
+    #         raise forms.ValidationError('شماره تلفن باید با 09 شروع شده و 11 رقم باشد.')
+    #     # بررسی یکتایی شماره تلفن
+    #     if CustomUser.objects.filter(phone=phone).exists():
+    #         raise forms.ValidationError('این شماره تلفن قبلاً ثبت شده است.')
+    #     return phone
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if CustomUser.objects.filter(username=username).exists():
+            raise forms.ValidationError('این نام کاربری قبلاً ثبت شده است.')
+        return username
 
     def save(self, commit=True, shop=None):
         user = super().save(commit=False)
         user.role = 'barber'
+        user.phone = self.cleaned_data['phone']
         if commit:
             user.save()
-            BarberProfile.objects.create(
-                user=user,
-                avatar=self.cleaned_data.get('avatar'),
-                bio=self.cleaned_data.get('bio'),
-                shop=shop
-            )
+            # ایجاد پروفایل آرایشگر
+            if shop:
+                BarberProfile.objects.create(
+                    user=user,
+                    shop=shop,
+                    status=True
+                )
         return user
 
 class BarberProfileForm(forms.ModelForm):

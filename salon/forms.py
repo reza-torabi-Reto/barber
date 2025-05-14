@@ -30,15 +30,34 @@ class ShopEditForm(forms.ModelForm):
 class ServiceForm(forms.ModelForm):
     class Meta:
         model = Service
-        fields = ('name', 'price', 'duration', 'barber')  # اضافه شد
+        fields = ('name', 'price', 'duration', 'barber')
+        labels = {
+            'name': 'نام خدمت',
+            'price': 'قیمت (تومان)',
+            'duration': 'زمان (دقیقه)',
+            'barber': 'آرایشگر',
+        }
 
     def __init__(self, *args, shop=None, **kwargs):
         super().__init__(*args, **kwargs)
         if shop:
-            self.fields['barber'].queryset = BarberProfile.objects.filter(shop=shop)
+            barbers = BarberProfile.objects.filter(shop=shop, status=True)
+            self.fields['barber'].queryset = barbers
+            # حذف گزینه خالی
+            self.fields['barber'].empty_label = None
+            # اگر هیچ آرایشگری وجود ندارد، خطا نمایش بده
+            if not barbers.exists():
+                self.fields['barber'].choices = [('', 'هیچ آرایشگری در دسترس نیست')]
+                self.fields['barber'].disabled = True
         else:
             self.fields['barber'].queryset = BarberProfile.objects.none()
-            
+            self.fields['barber'].empty_label = None
+
+    def clean_barber(self):
+        barber = self.cleaned_data.get('barber')
+        if not barber:
+            raise forms.ValidationError('لطفاً یک آرایشگر انتخاب کنید.')
+        return barber
 
 class ServiceEditForm(forms.ModelForm):
     class Meta:

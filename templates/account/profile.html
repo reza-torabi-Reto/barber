@@ -1,45 +1,83 @@
 {% extends 'base.html' %}
-{% load static%}
+{% load static %}
+{% block title %}نوبت آرا | پرونده {{ user.nickname }}{% endblock %}
 
-
-<!-- templates/account/profile.html -->
-{% block title %}پروفایل{% endblock %}
+{% block navleft %}
+<form method="post" action="{% url 'account:logout' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-secondary">خروج</button>
+</form>
+{% endblock %}
+{% block navright %}
+<div class="d-flex align-items-baseline justify-content-end">
+    <h4>نوبت آرا | پرونده {{ user.nickname }}</h4>
+</div>
+{% endblock %}
 
 {% block content %}
-<div class="form-group">
-        {% if profile.avatar %}
-            <p>آواتار فعلی: <img src="{{ profile.get_avatar_url }}" alt="آواتار فعلی" style="max-width: 100px;"></p>
-        {% else %}
-        <p>آواتار فعلی: <img src="{% static 'images/default_avatar.png' %}" alt="آواتار پیشفرض" style="max-width: 100px;"></p>
-        {% endif %}
-    </div>
-    {% if user.first_name or user.last_name %}
-    <p>نام: {{ user.nickname }}</p>
-    {% else %}
-    <p>نام: خالی</p>
-    {% endif %}
-    <p>تلفن: {{ user.phone }}</p>
-    {% if user.email %}
-    <p>رایانامه: {{ user.email }}</p>
-    {% else %}
-    <p>رایانامه: خالی</p>
-    {% endif %}
-        <h2>آرایشگاه‌های شما</h2>
-        {% for shop in user.managed_shops.all %}
-            <p>
-                {{ shop.name }}
-                <a href="{% url 'salon:manage_shop' shop.id %}">مدیریت</a>|
-                <a href="{% url 'salon:manager_appointments' shop.id %}">مشاهده نوبت‌ها</a>
-            </p>
-        {% empty %}
-            <p>شما هنوز آرایشگاهی ثبت نکرده‌اید.</p>
-        {% endfor %}
-        <a href="{% url 'salon:create_shop' %}">ایجاد آرایشگاه جدید</a>|
 
-    <a href="{% url 'account:edit_manager_profile' %}">ویرایش پروفایل</a>|
+    <div class="row">
+        <div class="col-md-4">
+            {% if profile.avatar %}
+                <img src="{{ profile.get_avatar_url }}" alt="آواتار فعلی" style="max-width: 370px; width: 90%;">
+            {% else %}
+                <img src="{% static 'images/default_avatar.png' %}" alt="آواتار پیشفرض" style="max-width: 370px; width: 90%;">
+            {% endif %}
+        </div>
+        <div class="col-md-8">
+            <div>
+                {% if user.first_name %}
+                <p><strong>نام: </strong>{{ user.first_name }}</p>
+                {% else %}
+                <p><strong>نام:</strong> -</p>
+                {% endif %}
+                {% if user.last_name %}
+                <p><strong>نام خانوادگی:</strong> {{ user.last_name }}</p>
+                {% else %}
+                <p><strong>نام خانوادگی:</strong> -</p>
+                {% endif %}
+                {% if user.email %}
+                <p><strong>رایانامه:</strong> {{ user.email }}</p>
+                {% else %}
+                <p><strong>رایانامه:</strong> -</p>
+                {% endif %}
+                <p><strong>تلفن:</strong> {{ user.phone }}</p>
+            </div>
+            <div>
+                <a href="{% url 'account:edit_manager_profile' %}" class="btn btn-primary btn-sm">ویرایش پروفایل</a>
+                <a href="{% url 'account:edit_manager_profile' %}" class="btn btn-primary btn-sm">بازیابی گذرواژه</a>
+            </div>
+        </div>
+    </div>
+    <hr>    
+    <div class="row">
+        <div class="col-md-6">
+            <h4>آرایشگرهای شما</h4>
+        </div>
+        <div class="col-md-6 text-left">
+            <a href="{% url 'salon:create_shop' %}"  class="btn btn-success">ایجاد آرایشگاه جدید</a>
+        </div>
+    </div>
+    <div class="col mt-2">
+            {% if user.managed_shops %}
+            <ul class="list-group mb-2 pr-0">
+            {% for shop in user.managed_shops.all %}
+                <li class="list-group-item">
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ shop.name }} (کد: {{ shop.referral_code }})
+                        </div>
+                        <div class="col-md-6 text-left">
+                            <a href="{% url 'salon:manage_shop' shop.id %}" class="btn btn-primary btn-sm">مدیریت</a>
+                            <a href="{% url 'salon:manager_appointments' shop.id %}" class="btn btn-info btn-sm">مشاهده نوبت‌ها</a>
+                        </div>
+                    </div>
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>شما هنوز آرایشگاهی ثبت نکرده‌اید.</p>
+        {% endif %}
     
-    <form method="post" action="{% url 'account:logout' %}">
-        {% csrf_token %}
-        <button type="submit">خروج</button>
-    </form>
+    </div>    
 {% endblock %}

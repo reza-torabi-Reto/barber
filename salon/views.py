@@ -126,16 +126,19 @@ def manage_schedule(request, shop_id):
 def create_barber(request, shop_id):
     if request.user.role != 'manager':
         return redirect('home')
-
+    print('1')
     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
     if request.method == 'POST':
-        form = BarberSignUpForm(request.POST, request.FILES)
+        form = BarberSignUpForm(request.POST) #->, request.FILES
+        print('2')
         if form.is_valid():
-            barber = form.save(shop=shop)
+            print('3')
+            form.save(shop=shop)
             return redirect('salon:manage_shop', shop_id=shop.id)
+        else:
+            print('Form errors:', form.errors)  # چاپ خطاها برای دیباگ
     else:
         form = BarberSignUpForm()
-        print("Fields in form:", form.fields.keys())
 
     return render(request, 'salon/create_barber.html', {'form': form, 'shop': shop})
 
@@ -159,25 +162,33 @@ def barber_appointments(request):
 
     appointments = Appointment.objects.filter(barber=request.user).order_by('-start_time')
     return render(request, 'salon/barber_appointments.html', {'appointments': appointments})
-# ایجاد خدمت توسط مدیر
 
+# ایجاد خدمت توسط مدیر
 @login_required
 def create_service(request, shop_id):
     if request.user.role != 'manager':
         return redirect('home')
 
     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
+    # بررسی وجود آرایشگر
+    has_barbers = BarberProfile.objects.filter(shop=shop, status=True).exists()
+
     if request.method == 'POST':
         form = ServiceForm(request.POST, shop=shop)
-        if form.is_valid():
-            service = form.save(commit=False)   # آرایشگر انتخاب نمیشه
+        if has_barbers and form.is_valid():
+            service = form.save(commit=False)
             service.shop = shop
             service.barber = form.cleaned_data['barber']
             service.save()
             return redirect('salon:manage_shop', shop_id=shop.id)
     else:
         form = ServiceForm(shop=shop)
-    return render(request, 'salon/create_service.html', {'form': form, 'shop': shop})
+
+    return render(request, 'salon/create_service.html', {
+        'form': form,
+        'shop': shop,
+        'has_barbers': has_barbers,
+    })
 
 # ویرایش خدمت توسط مدیر
 @login_required
@@ -187,16 +198,44 @@ def edit_service(request, shop_id, service_id):
 
     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
     service = get_object_or_404(Service, id=service_id, shop=shop)
+    has_barbers = BarberProfile.objects.filter(shop=shop, status=True).exists()
 
     if request.method == 'POST':
-        form = ServiceEditForm(request.POST, instance=service)
+        form = ServiceForm(request.POST, instance=service, shop=shop)
         if form.is_valid():
-            form.save()
+            service = form.save(commit=False)
+            service.shop = shop
+            # آرایشگر تغییر نکند (از مقدار فعلی استفاده می‌شود)
+            service.barber = service.barber  # یا نادیده گرفته می‌شود چون در فرم غیرفعال است
+            service.save()
             return redirect('salon:manage_shop', shop_id=shop.id)
     else:
-        form = ServiceEditForm(instance=service)
+        form = ServiceForm(instance=service, shop=shop)
 
-    return render(request, 'salon/edit_service.html', {'form': form, 'shop': shop, 'service': service})
+    return render(request, 'salon/edit_service.html', {
+        'form': form,
+        'shop': shop,
+        'service': service,
+        'has_barbers': has_barbers,
+    })
+
+# @login_required
+# def edit_service(request, shop_id, service_id):
+#     if request.user.role != 'manager':
+#         return redirect('home')
+
+#     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
+#     service = get_object_or_404(Service, id=service_id, shop=shop)
+
+#     if request.method == 'POST':
+#         form = ServiceEditForm(request.POST, instance=service)
+#         if form.is_valid():
+#             form.save()
+#             return redirect('salon:manage_shop', shop_id=shop.id)
+#     else:
+#         form = ServiceEditForm(instance=service)
+
+#     return render(request, 'salon/edit_service.html', {'form': form, 'shop': shop, 'service': service})
 
 # حذف خدمت توسط مدیر
 @login_required
@@ -246,10 +285,17 @@ def confirm_appointment_manager(request, id):
 def customer_appointments(request):
     if request.user.role != 'customer':
         return redirect('home')
-
+    
     appointments = Appointment.objects.filter(customer=request.user).order_by('-start_time')
     return render(request, 'salon/customer_appointments.html', {'appointments': appointments})
 
+def shop_customer_appointments(request, shop_id):
+    if request.user.role != 'customer':
+        return redirect('home')
+    
+    appointments = Appointment.objects.filter(customer=request.user, shop_id=shop_id).order_by('-start_time')
+    
+    return render(request, 'salon/customer_appointments.html', {'appointments': appointments})
 
 
 # صفحه انتخاب آرایشگر و خدمات توسط مشتری

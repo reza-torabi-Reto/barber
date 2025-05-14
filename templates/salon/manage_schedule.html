@@ -1,17 +1,10 @@
 <!-- templates/salon/manage_schedule.html -->
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>مدیریت تنظیمات آرایشگاه</title>
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block title %}پروفایل{% endblock %}
+{% block mycss%}
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-            direction: rtl;
-        }
+        
         h1 {
             text-align: center;
             color: #333;
@@ -27,11 +20,17 @@
             border: 1px solid #ddd;
         }
         th {
-            background-color: #f4f4f4;
+            background-color: #000;
             font-weight: bold;
         }
         tr:nth-child(even) {
             background-color: #f9f9f9;
+        }
+        td input{
+            width: 90px;
+            padding: 0px;
+            text-align: center;
+            font-size: 14px;
         }
         .error {
             color: red;
@@ -50,55 +49,68 @@
             background-color: #0056b3;
         }
     </style>
-</head>
-<body>
-    <h1>مدیریت تنظیمات آرایشگاه: {{ shop.name }}</h1>
-    <form method="post">
-        {% csrf_token %}
-        {{ formset.management_form }}
-        {% if formset.errors %}
-            <div class="error">
-                <p>لطفاً خطاهای زیر را برطرف کنید:</p>
-                <ul>
-                    {% for form in formset %}
-                        {% for field, errors in form.errors.items %}
-                            <li>{{ form.instance.get_day_of_week_display }} - {{ field }}: {{ errors }}</li>
+{% endblock %}
+{% block navleft %}
+<a href="{% url 'salon:manage_shop' shop.id %}" class="btn btn-secondary">بازگشت به مدیریت</a>
+<form method="post" action="{% url 'account:logout' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-secondary">خروج</button>
+</form>
+{% endblock %}
+{% block navright %}
+<h4>{{ shop.name }} | تنظیم روزهای کاری</h4>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col">
+        <form method="post">
+            {% csrf_token %}
+            {{ formset.management_form }}
+            {% if formset.errors %}
+                <div class="error">
+                    <p>لطفاً خطاهای زیر را برطرف کنید:</p>
+                    <ul>
+                        {% for form in formset %}
+                            {% for field, errors in form.errors.items %}
+                                <li>{{ form.instance.get_day_of_week_display }} - {{ field }}: {{ errors }}</li>
+                            {% endfor %}
+                            {% if form.non_field_errors %}
+                                <li>{{ form.instance.get_day_of_week_display }}: {{ form.non_field_errors }}</li>
+                            {% endif %}
                         {% endfor %}
-                        {% if form.non_field_errors %}
-                            <li>{{ form.instance.get_day_of_week_display }}: {{ form.non_field_errors }}</li>
-                        {% endif %}
-                    {% endfor %}
-                </ul>
-            </div>
-        {% endif %}
-        <table>
-            <thead>
-                <tr>
-                    <th>روز</th>
-                    <th>باز/بسته</th>
-                    <th>ساعت شروع</th>
-                    <th>ساعت پایان</th>
-                    <th>شروع استراحت</th>
-                    <th>پایان استراحت</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for form, schedule in form_schedule_pairs %}
+                    </ul>
+                </div>
+            {% endif %}
+            <table>
+                <thead>
                     <tr>
-                        <td>{{ schedule.get_day_of_week_display }}</td>
-                        <td>{{ form.is_open }}</td>
-                        <td>{{ form.start_time }}</td>
-                        <td>{{ form.end_time }}</td>
-                        <td>{{ form.break_start }}</td>
-                        <td>{{ form.break_end }}</td>
+                        <th>روز</th>
+                        <th>باز/بسته</th>
+                        <th>ساعت شروع</th>
+                        <th>ساعت پایان</th>
+                        <th>شروع استراحت</th>
+                        <th>پایان استراحت</th>
                     </tr>
-                    {{ form.id.as_hidden }}
-                    {{ form.day_of_week.as_hidden }}
-                {% endfor %}
-            </tbody>
-        </table>
-        <button type="submit">ذخیره تغییرات</button>
-    </form>
-    <a href="{% url 'salon:manage_shop' shop.id %}">بازگشت به مدیریت آرایشگاه</a>
-</body>
-</html>
+                </thead>
+                <tbody>
+                    {% for form, schedule in form_schedule_pairs %}
+                        <tr>
+                            <td>{{ schedule.get_day_of_week_display }}</td>
+                            <td>{{ form.is_open }}</td>
+                            <td>{{ form.start_time }}</td>
+                            <td>{{ form.end_time }}</td>
+                            <td>{{ form.break_start }}</td>
+                            <td>{{ form.break_end }}</td>
+                        </tr>
+                        {{ form.id.as_hidden }}
+                        {{ form.day_of_week.as_hidden }}
+                    {% endfor %}
+                </tbody>
+            </table>
+            <button type="submit" class="float-left m-0">ذخیره تغییرات</button>
+        </form>
+    </div>
+</div>
+    
+{% endblock %}

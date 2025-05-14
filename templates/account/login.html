@@ -2,11 +2,20 @@
 {% extends 'base.html' %}
 {% block title %}پروفایل{% endblock %}
 {% block content %}
-    <h1>ورود به سیستم</h1>
+<div class="my_login m-auto" style="max-width: 400px;">
+    <h4 class="mb-4">ورود به سیستم</h4>
     <form method="post">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">ورود</button>
+        <p>
+          <label for="id_username">نام کاربری:</label>
+          <input type="text" class="form-control" name="username" autofocus="" autocapitalize="none" autocomplete="username" maxlength="150" required="" id="id_username">
+        </p>
+        <p>
+          <label for="id_password">گذرواژه:</label>
+          <input type="password" class="form-control" name="password" autocomplete="current-password" required="" id="id_password">
+        </p>
+        <button type="submit" class="btn btn-primary">ورود</button>
     </form>
     <p>حساب ندارید؟ <a href="{% url 'account:manager_signup' %}">ثبت‌نام کنید</a></p>
+</div>
 {% endblock %}

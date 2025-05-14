@@ -1,20 +1,58 @@
 {% extends 'base.html' %}
-{% block title %}پروفایل{% endblock %}
-{% block content %}
-    <div class="container mt-5">
-        <h1>تأیید نوبت - {{ shop.name }}</h1>
-        <h3>جزئیات نوبت</h3>
-        <p><strong>آرایشگاه:</strong> {{ shop.name }}</p>
-        <p><strong>آرایشگر:</strong> {{ barber.username }}</p>
-        <p><strong>خدمات:</strong> {{ services|join:", " }}</p>
-        <p><strong>قیمت کل:</strong> {{ total_price }} تومان</p>
-        <p><strong>مدت زمان کل:</strong> {{ total_duration }} دقیقه</p>
-        <p><strong>تاریخ و زمان:</strong> {{ start_time|date:"l j F Y" }}، {{ start_time|time:"H:i" }} - {{ end_time|time:"H:i" }}</p>
+{% block title %}نوبت آرا | پرونده {{ user.nickname }}{% endblock %}
+{% load custom_filters %}
 
-        <form method="post">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-success">تأیید نوبت</button>
-            <a href="{% url 'salon:select_date_time' %}" class="btn btn-danger">لغو</a>
-        </form>
+{% block navleft %}
+<a href="{% url 'account:customer_profile' %}" class="btn btn-secondary">بازگشت به پروفایل</a>
+<form method="post" action="{% url 'account:logout' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-secondary">خروج</button>
+</form>
+{% endblock %}
+{% block navright %}
+<div class="d-flex align-items-baseline justify-content-end">
+    <h4>نوبت آرا | تأیید نوبت {{ shop.name }}</h4>
+</div>
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <h4 class="col mb-2">جزییات</h4>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <p><strong>آرایشگر:</strong> {{ barber.nickname }}</p>
+        </div>
+        <div class="col-12">
+            <p><strong>قیمت کل:</strong> {{ total_price }} تومان</p>
+        </div>
+        <div class="col-12">
+            <p><strong>تاریخ:</strong> {{ start_time|j_date }}</p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <p><strong>ساعت:</strong>از ساعت {{ start_time|time:"H:i" }} تا ساعت {{ end_time|time:"H:i" }} ({{ total_duration }} دقیقه)</p>
+        </div>
+        <div class="col-12">
+            <p><strong>خدمات:</strong></p>
+            <p>
+                <ul>
+                    {% for service in services %}
+                        <li>{{ service.name }} | ({{ service.duration }} دقیقه) - ({{service.price}} تومان)</li>
+                    {% endfor %}
+                </ul>
+            </p>
+        </div>
+    </div>
+    <hr>
+    <div class="row">
+        <div class="col-12 text-left">
+            <form method="post">
+                {% csrf_token %}
+                <a href="{% url 'salon:select_date_time' %}" class="btn btn-danger">لغو</a>
+                <button type="submit" class="btn btn-success">تأیید نوبت</button>
+            </form>    
+        </div>
     </div>
     {% endblock %}
