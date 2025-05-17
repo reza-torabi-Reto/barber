@@ -328,7 +328,7 @@ def book_appointment(request, shop_id):
         services = Service.objects.filter(id__in=service_ids, shop=shop, barber=barber.barber_profile)
 
         if not services.exists():
-            return render(request, 'salon/book_appointment.html', {
+            return (request, 'salon/book_appointment.html', {
                 'shop': shop,
                 'barbers': barbers,
                 'error': 'خدمات انتخاب‌شده معتبر نیستند.'
@@ -422,11 +422,11 @@ def get_shop_details(request):
     barbers = CustomUser.objects.filter(role='barber',barber_profile__shop_id=shop_id).values('id', 'username')
 
     return JsonResponse({
-        'services': list(services),
+        'rvices': list(services),
         'barbers': list(barbers),
     })
 
-# صفحه تعیین روز/ساعت نوبت توسط مشتری
+# صفحه تعیین روز/ساعت نوبت توسط 
 def select_date_time(request):
     appointment_data = request.session.get('appointment_data')
     if not appointment_data:
@@ -436,6 +436,8 @@ def select_date_time(request):
     services = Service.objects.filter(id__in=appointment_data['services'], shop=shop)
     barber = get_object_or_404(CustomUser, id=appointment_data['barber_id'], role='barber', barber_profile__shop=shop)
     total_duration = services.aggregate(total=Sum('duration'))['total'] or 0
+
+
     if total_duration == 0:
         return render(request, 'salon/select_date_time.html', {
             'shop': shop,
@@ -448,7 +450,7 @@ def select_date_time(request):
         })
 
     schedules = ShopSchedule.objects.filter(shop=shop, is_open=True) 
-    working_days = [schedule.day_of_week for schedule in schedules]
+    working_days = [schedule.day_of_week for schedule in schedules] # saturday, sunday ,...
 
     if not working_days:
         return render(request, 'salon/select_date_time.html', {
@@ -461,14 +463,14 @@ def select_date_time(request):
             'error': 'هیچ روز کاری برای این آرایشگاه تعریف نشده است.'
         })
 
-    today = timezone.now().date()
-    dates = []
-    schedule_dict = {s.day_of_week: s for s in schedules}
+    today = timezone.now().date() # امروز
+    schedule_dict = {s.day_of_week: s for s in schedules} # liked working_days (?!)
+    
     jalali_dates = []
 
-    for i in range(31):
-        date = today + timedelta(days=i)
-        day_of_week = date.strftime('%A').lower()
+    for i in range(8):
+        date = today + timedelta(days=i) # هربار یک روز به تاریخ امروز اضافه میشه
+        day_of_week = date.strftime('%A').lower() # اسم روز رو برمیگردونه
         if day_of_week not in working_days:
             # print(f"Skipping {date} - not in working days")
             continue
@@ -481,11 +483,7 @@ def select_date_time(request):
         work_start = schedule.start_time
         work_end = schedule.end_time
 
-        booked_slots = Appointment.objects.filter(
-            barber=barber,
-            start_time__date=date,
-            status__in=['pending', 'confirmed']
-        ).values('start_time', 'end_time')
+        booked_slots = Appointment.objects.filter(barber=barber,start_time__date=date,status__in=['pending', 'confirmed']).values('start_time', 'end_time')
         # print(f"Booked slots for {date}: {list(booked_slots)}")
 
         current_time = timezone.make_aware(datetime.combine(date, work_start))
@@ -517,21 +515,20 @@ def select_date_time(request):
             current_time += slot_interval
         if has_free_slot:
             jalali_date_str = j_convert_appoiment(date)
-            print(f'DATE===:{jalali_date_str}=======')
+            # print(f'DATE===:{jalali_date_str}=======')
 
             jalali_dates.append({
                 'gregorian_date': date,
                 'jalali_date': jalali_date_str,  # مثلاً "7 اردیبهشت 1404"
                 'day_of_week': schedule.get_day_of_week_display(),
             })
-
     return render(request, 'salon/select_date_time.html', {
         'shop': shop,
-        'services': services,
         'barber': barber,
+        'services': services,
+        'total_duration': total_duration,
         'dates': jalali_dates,
         'appointment_data': appointment_data,
-        'total_duration': total_duration,
         'error': 'هیچ روز آزادی برای رزرو در ۳۰ روز آینده در دسترس نیست.' if not jalali_dates else None,
     })
 
@@ -616,7 +613,7 @@ def get_available_times(request):
 
     return JsonResponse({'times': available_times})
 
-# صفحه تایید نوبت توسط مشتری
+# صفحه تایید نوبت توسط 
 @login_required
 def confirm_appointment(request):
     appointment_data = request.session.get('appointment_data')
@@ -648,7 +645,7 @@ def confirm_appointment(request):
             customer=request.user,
             shop=shop,
             barber=barber,
-            start_time=start_time,
+            start_time=time,
             end_time=end_time,
             status='pending'
         )

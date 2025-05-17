@@ -39,99 +39,60 @@ PAGES MANAGER:
 -delete_customer: ->ok
 -massage_customer: -
 
+--------
+<style>
+    .date-scroll-container {
+        display: flex;
+        overflow-x: auto;
+        padding: 10px 0;
+        gap: 0.5rem;
+        scroll-snap-type: x mandatory;
+    }
 
+    .date-btn {
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+        white-space: nowrap;
+        min-width: 160px;
+        border-radius: 12px;
+    }
 
+    .date-scroll-container::-webkit-scrollbar {
+        height: 8px;
+    }
 
-
-
-
-
-manager:
-- manage of profile :
-    - edite info -> ok
-    - recover password -> 
-- settings days of work 
-- message to customers
-- manage of appointments
-
-barber:
-- manage of profile:
-    - edite info -> ok
-    - recover password ->
-- manage of appointments
-
-customer:
-- manage of profile:
-    - edite info -> ok
-    - recover password ->
-- select appointment -> ok
-- views appointments:
-    - create profile shop
-    - show barber better
-    - remove days of full or hollyday
-    - convert date to irani
-    
-
-مدیر:
-1.ایجاد(ویرایش، حذف و ...) آرایشگاه
-2. ایجاد(ویرایش، حذف و ...) آرایشگر
-3. ایجاد (ویرایش و...) خدمات
-4. تعیین روزهای کاری هفتگی - تعیین ساعت کاری روزانه - تعیین ساعت استراحت روزانه
-5. مدیریت مشتریان (تعیین وضعیت(قبول/رد)، پیام دادن و...)
-6. مدیریت نوبت ها
-7. ویرایش پروفایل خودش
-8. دیدن تاریخچه نوبت ها
-
-آرایشگر:
-1. ویرایش پروفایل خودش
-2. دیدن و تعیین وضعیت نوبت های مربوط به خودش
-
-مشتری:
-1. ویرایش پروفایل خودش
-2.مدیریت آرایشگاه های عضو شده(لغو عضویت و...)
-3. فرایند گرفتن نوبت (انتخاب آرایشگر، خدمات، زمان و...)
-3. دیدن تاریخچه نوبت ها
+    .date-scroll-container::-webkit-scrollbar-thumb {
+        background: #007bff;
+        border-radius: 4px;
+    }
+</style>
+<div class="row">
+    <h4 class="col-12 mb-2">انتخاب روز:</h4>
+    <div class="col-12">
+        {% if dates %}
+        <div class="date-scroll-container">
+            {% for date in dates %}
+                <button type="button" class="btn btn-outline-primary date-btn" onclick="loadTimes('{{ date.gregorian_date|date:'Y-m-d' }}')">
+                    {{ date.day_of_week }}<br>{{ date.jalali_date }}
+                </button>
+            {% endfor %}
+        </div>
+        {% else %}
+            <p>هیچ روز آزادی برای رزرو در دسترس نیست.</p>
+        {% endif %}
+    </div>
+</div>
 
 -----------
-
-# @login_required
-# def list_barber(request, shop_id):
-#     if request.user.role != 'manager':
-#         return redirect('home')
-
-#     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
-#     barbers = CustomUser.objects.filter(role='barber', barber_profile__shop=shop)
-#     return render(request, 'salon/list_barber.html', {'shop': shop, 'barbers': barbers})
-
-# @login_required
-# def service_list(request, shop_id):
-#     if request.user.role != 'manager':
-#         return redirect('home')
-
-#     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
-#     services = Service.objects.filter(shop=shop)
-#     return render(request, 'salon/service_list.html', {'shop': shop, 'services': services})
-
-
-# در صفحه book_appointment:
-// آپدیت زمان‌های آزاد
-        function updateAvailableTimes(selectedServices) {
-            const barberId = document.getElementById('id_barber').value;
-            const date = document.getElementById('id_date').value;
-            if (barberId && date && selectedServices.length > 0) {
-                const serviceParams = selectedServices.map(id => `services=${id}`).join('&');
-                fetch(`/salon/get-available-times/?shop_id={{ shop.id }}&barber_id=${barberId}&date=${date}&${serviceParams}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        const timeSelect = document.getElementById('id_time');
-                        timeSelect.innerHTML = '<option value="">---------</option>';
-                        data.times.forEach(time => {
-                            const option = document.createElement('option');
-                            option.value = time;
-                            option.text = time;
-                            timeSelect.appendChild(option);
-                        });
-                    })
-                    .catch(error => console.error('Error fetching available times:', error));
-            }
-        }
+تمپلیت 
+{% if dates %}
+            <div class="date-scroll-container">
+                {% for date in dates %}
+                    <button type="button" class="btn btn-outline-primary date-btn" onclick="loadTimes('{{ date.gregorian_date|date:'Y-m-d' }}')">
+                        {{ date.day_of_week }}<br>{{ date.jalali_date }}
+                    </button>
+                {% endfor %}
+            </div>
+            {% else %}
+                <p>هیچ روز آزادی برای رزرو در دسترس نیست.</p>
+            {% endif %}
