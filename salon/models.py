@@ -5,7 +5,7 @@ from django.db.models import Sum
 from django.core.exceptions import ValidationError
 from datetime import timedelta 
 # from extensions.utils import  jalali_convert
-from .utils import generate_referral_code
+from .utils.generate_referral import generate_referral_code
 
 class Shop(models.Model):
     STATUS_CHOISE = (
@@ -37,7 +37,7 @@ class Shop(models.Model):
     class Meta:
         verbose_name = "آرایشگاه"
         verbose_name_plural = "آرایشگاه‌ها"
-
+# salon/models.py
 class Service(models.Model):
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE, related_name='services', verbose_name="آرایشگاه")
     barber = models.ForeignKey('account.BarberProfile', on_delete=models.SET_NULL, null=True, blank=True, related_name='services', verbose_name="آرایشگر")

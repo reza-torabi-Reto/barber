@@ -1,3 +1,5 @@
+token github:
+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
 
 PAGES MANAGER:
 
@@ -39,60 +41,3 @@ PAGES MANAGER:
 -delete_customer: ->ok
 -massage_customer: -
 
---------
-<style>
-    .date-scroll-container {
-        display: flex;
-        overflow-x: auto;
-        padding: 10px 0;
-        gap: 0.5rem;
-        scroll-snap-type: x mandatory;
-    }
-
-    .date-btn {
-        flex: 0 0 auto;
-        scroll-snap-align: start;
-        white-space: nowrap;
-        min-width: 160px;
-        border-radius: 12px;
-    }
-
-    .date-scroll-container::-webkit-scrollbar {
-        height: 8px;
-    }
-
-    .date-scroll-container::-webkit-scrollbar-thumb {
-        background: #007bff;
-        border-radius: 4px;
-    }
-</style>
-<div class="row">
-    <h4 class="col-12 mb-2">انتخاب روز:</h4>
-    <div class="col-12">
-        {% if dates %}
-        <div class="date-scroll-container">
-            {% for date in dates %}
-                <button type="button" class="btn btn-outline-primary date-btn" onclick="loadTimes('{{ date.gregorian_date|date:'Y-m-d' }}')">
-                    {{ date.day_of_week }}<br>{{ date.jalali_date }}
-                </button>
-            {% endfor %}
-        </div>
-        {% else %}
-            <p>هیچ روز آزادی برای رزرو در دسترس نیست.</p>
-        {% endif %}
-    </div>
-</div>
-
------------
-تمپلیت 
-{% if dates %}
-            <div class="date-scroll-container">
-                {% for date in dates %}
-                    <button type="button" class="btn btn-outline-primary date-btn" onclick="loadTimes('{{ date.gregorian_date|date:'Y-m-d' }}')">
-                        {{ date.day_of_week }}<br>{{ date.jalali_date }}
-                    </button>
-                {% endfor %}
-            </div>
-            {% else %}
-                <p>هیچ روز آزادی برای رزرو در دسترس نیست.</p>
-            {% endif %}
