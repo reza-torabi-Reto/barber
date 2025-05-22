@@ -48,6 +48,18 @@
         </div>
     </div>
     <hr>
+    <div class="row">
+        <div class="col-md-4">
+            <h4>بخش نوبت ها</h4>
+        </div>
+        <div class="col-md-8 d-flex justify-content-end">
+                <a href="{% url 'salon:manager_appointments' shop.id %}" class="btn btn-primary">همه نوبت ها ({{all_appointment_count}})</a>     
+                <a href="{% url 'salon:manager_appointments' shop.id %}?pending=2" class="btn btn-primary mr-2">نوبت های امروز ({{today_appointment_count}})</a>
+                <a href="{% url 'salon:manager_appointments' shop.id %}?pending=1" class="btn btn-primary mr-2">نوبت های تأیید نشده ({{pending_appointment_count}})</a>
+                
+        </div>
+    </div>
+    <hr>
     <div class="row">    
         <div class="col-md-6">
             <h4>آرایشگرها</h4>

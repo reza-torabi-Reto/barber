@@ -41,12 +41,19 @@ def manage_shop(request, shop_id):
     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
     barbers = CustomUser.objects.filter(role='barber', barber_profile__shop=shop)
     services = Service.objects.filter(shop=shop)
-    for b in barbers:
-        print(f'Status = {b.barber_profile.status}')
+
+    base_qs = Appointment.objects.filter(shop=shop)
+    all_appointment_count = base_qs.filter().count()
+    pending_appointment_count = base_qs.filter(status='pending').count()
+    print(f"Date now: {timezone.now().date()}")
+    today_appointment_count = base_qs.filter(start_time__date=timezone.now().date()).count()
     return render(request, 'salon/manage_shop.html', {
         'shop': shop,
         'barbers': barbers,
         'services': services,
+        'all_appointment_count':all_appointment_count,
+        'pending_appointment_count': pending_appointment_count,
+        'today_appointment_count': today_appointment_count,
     })
 
 # ویرایش آرایشگاه توسط مدیر
@@ -231,14 +238,22 @@ def delete_service(request, shop_id, service_id):
     return redirect('salon:manage_shop', shop_id=shop.id)
 
 # نمایش نوبت ها برای مدیر
+
 @login_required
 def manager_appointments(request, shop_id):
     if request.user.role != 'manager':
         return redirect('home')
 
     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
-    appointments = Appointment.objects.filter(shop=shop).order_by('-start_time') 
-    
+    base_qs = Appointment.objects.filter(shop=shop)
+    pending_only = request.GET.get('pending') 
+    if pending_only=='1':
+        appointments = base_qs.filter(shop=shop, status='pending').order_by('-start_time') 
+    elif pending_only=='2':
+        appointments = base_qs.filter(shop=shop, start_time__date=timezone.now().date()).order_by('-start_time') 
+    else:
+        appointments = base_qs.filter(shop=shop).order_by('-start_time') 
+
     return render(request, 'salon/manager_appointments.html', {
         'shop': shop,
         'appointments': appointments
@@ -372,7 +387,6 @@ def select_date_time(request):
     schedules = ShopSchedule.objects.filter(shop=shop, is_open=True)
     working_days = {s.day_of_week: s for s in schedules}
     
-    print(f"working_days: {working_days}")
     today = timezone.now().date()
     jalali_dates = []
 
@@ -404,8 +418,10 @@ def select_date_time(request):
 # نمایش ساعت های خالی روزهای هفته در صفحه:(select_date_time) 
 @login_required
 def get_available_times(request):
+    
     if request.user.role != 'customer':
         return redirect('home')
+    
     shop_id = request.GET.get('shop_id')
     barber_id = request.GET.get('barber_id')
     date_str = request.GET.get('date')
@@ -446,7 +462,6 @@ def confirm_appointment(request):
     barber = get_object_or_404(CustomUser, id=appointment_data['barber_id'], role='barber', barber_profile__shop=shop)
     date_str = request.GET.get('date')
     time_str = request.GET.get('time')
-
     if not (date_str and time_str):
         return redirect('salon:select_date_time')
 
@@ -454,6 +469,8 @@ def confirm_appointment(request):
         date = datetime.strptime(date_str, '%Y-%m-%d').date()
         time = datetime.strptime(time_str, '%H:%M').time()
         start_time = timezone.make_aware(datetime.combine(date, time))
+        # print(f"time: {start_time}") # output -> "time: 2025-05-22 08:00:00+03:30"
+
     except ValueError:
         return redirect('salon:select_date_time')
 
@@ -466,10 +483,11 @@ def confirm_appointment(request):
             customer=request.user,
             shop=shop,
             barber=barber,
-            start_time=time,
+            start_time=start_time,
             end_time=end_time,
             status='pending'
         )
+        # print(f"start: {start_time}, end: {end_time}") #output -> "start: 2025-05-22 08:00:00+03:30, end: 2025-05-22 09:00:00+03:30"
         appointment.save()
         for service in services:
             AppointmentService.objects.create(appointment=appointment, service=service)
@@ -485,6 +503,8 @@ def confirm_appointment(request):
         'total_price': total_price,
         'total_duration': total_duration,
     })
+
+
 
 # صفحه مشخصات آرایشگاه برای مشتری
 @login_required

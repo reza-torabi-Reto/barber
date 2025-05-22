@@ -1,21 +1,42 @@
 {% extends 'base.html' %}
 {% load custom_filters %}
 {% block title %}پروفایل{% endblock %}
-{% block content %} 
-<p>{{ appointment.start_time|j_date }} {{ appointment.start_time|j_time }}-{{ appointment.end_time|j_time }}</p>
 
-<p>نام مشتری: {{ appointment.customer.nickname }}</p>
-<p>شماره تماس مشتری:{{ appointment.customer.phone }}</p>
-<p>نام آرایشگر: {{ appointment.barber.username }}</p>
-<p>خدمات:</p>
-<p>{{ appointment|get_services }}</p>
-<p>وضعیت: {{ appointment.get_status_display }}</p>
-
-{% if appointment.status == 'pending' %}
-<form method="post">
+{% block navleft %}
+<a href="{% url 'salon:manage_shop' appointment.shop.id %}" class="btn btn-secondary">بازگشت به مدیریت</a>
+<form method="post" action="{% url 'account:logout' %}">
     {% csrf_token %}
-    <button type="submit">تایید نوبت</button>
+    <button type="submit" class="btn btn-secondary">خروج</button>
 </form>
-{% endif %}
-<a href="{% url 'salon:manage_shop' appointment.shop_id %}">صفحه مدیریت</a>
+{% endblock %}
+{% block navright %}
+<h4>{{ appointment.shop.name }} | تایید نوبت</h4>
+{% endblock %}
+
+{% block content %} 
+<div class="row">
+    <div class="col-12">
+        <p><strong>آرایشگر:</strong> {{ appointment.barber.nickname }}</p>
+    </div>
+    <div class="col-12">
+        <p><strong>تاریخ/زمان:</strong> {{ appointment.start_time|j_date }} {{ appointment.start_time|j_time }}-{{ appointment.end_time|j_time }}</p>
+    </div>
+    <div class="col-12">
+        <p><strong>نام مشتری:</strong> {{ appointment.customer.nickname }}</p>
+    </div>
+    <div class="col-12">
+        <p><strong>خدمات:</strong> {{ appointment|get_services }}</p>
+    </div>
+    <div class="col-12">
+        <p><strong>وضعیت:</strong> {{ appointment.get_status_display }}</p>
+    </div>
+    <div class="col-12 text-left">
+        {% if appointment.status == 'pending' %}
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">تأیید نوبت</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

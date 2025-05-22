@@ -1,6 +1,8 @@
 <!-- templates/salon/customer_appointments.html -->
 {% extends 'base.html' %}
 {% block title %}نوبت آرا | نوبت های  {{ user.nickname }}{% endblock %}
+{% load tz %}
+
 {% load custom_filters %}
 {% block navleft %}
 <a href="{% url 'account:customer_profile' %}" class="btn btn-secondary">بازگشت به پروفایل</a>
@@ -38,8 +40,8 @@
                         <td>{{ appointment|get_services }}</td>
                         <td>{{ appointment.barber.nickname }}</td>
                         <td>{{ appointment.start_time|j_date }}</td>
-                        <td>{{ appointment.start_time|j_time }}</td>
-                        <td>{{ appointment.end_time|j_time }}</td>
+                        <td>{{ appointment.start_time|localtime|j_time }}</td>
+                        <td>{{ appointment.end_time|localtime|j_time }}</td>
                         <td>{{ appointment.get_status_display }}</td>
                     </tr>
                 {% endfor %}

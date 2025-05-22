@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 from django.utils import timezone
+from django.utils.timezone import make_aware, localtime
+
 from django.db.models import Sum
 from salon.models import Appointment
 
@@ -30,11 +32,24 @@ def find_available_time_slots(date, schedule, barber, total_duration): # date=to
     ).values('start_time', 'end_time')
 
     available_slots = []
+    # now = timezone.now()
+    now = localtime()  # ساعت فعلی با تایم‌زون صحیح
+    future_threshold = now + timedelta(minutes=30)  # حداقل نیم‌ساعت بعد از اکنون
+    # print(f'now: {now}, future_threshold: {future_threshold}')
+    # print("++++++++++++++++")
     current_time = work_start
     slot_interval = timedelta(minutes=30)
-
+    # print(f"current_time: {current_time}")
+    # print("++++++++++++++++")
     while current_time + timedelta(minutes=total_duration) <= work_end:
         slot_end = current_time + timedelta(minutes=total_duration)
+
+        if date == now.date() and current_time < future_threshold:
+                   current_time += slot_interval
+                   print(f"date: {date}, current_time: {current_time}, slot_interval: {slot_interval}")
+                   print("////////////////////////")
+                   continue
+
         if is_slot_available(current_time, slot_end, booked_slots, break_start, break_end):
             available_slots.append({
                 'start_time': current_time.strftime('%H:%M'),

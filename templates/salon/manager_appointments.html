@@ -1,30 +1,44 @@
 <!-- templates/salon/manager_appointments.html -->
 {% extends 'base.html' %}
-{% load custom_filters %} 
+{% load custom_filters %}
+{% load tz %}
 {% block title %}پروفایل{% endblock %}
+
+{% block navleft %}
+<a href="{% url 'salon:manage_shop' shop.id %}" class="btn btn-secondary">بازگشت به مدیریت</a>
+<form method="post" action="{% url 'account:logout' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-secondary">خروج</button>
+</form>
+{% endblock %}
+{% block navright %}
+<h4>{{ shop.name }} | فهرست نوبت ها</h4>
+{% endblock %}
+
 {% block content %}
-    <h1>نوبت‌های آرایشگاه: {{ shop.name }}</h1>
     {% if appointments %}
-        <table>
+        <table class="w-100">
             <thead>
                 <tr>
-                    <th style="width: 200px;">تاریخ</th>
-                    <th style="width: 200px;">زمان شروع</th>
-                    <th style="width: 200px;">آرایشگر</th>
-                    <th style="width: 200px;">مشتری</th>
-                    <th style="width: 200px;">جزییات</th>
-                    <th style="width: 200px;">وضعیت</th>
+                    <th></th>
+                    <th class="px-4">آرایشگر</th>
+                    <th class="px-4">مشتری</th>
+                    <th class="px-4">تاریخ</th>
+                    <th class="px-4">ساعت</th>
+                    <th class="px-4">وضعیت</th>
+                    <th class="px-4">جزییات</th>
                 </tr>
             </thead>
             <tbody>
                 {% for appointment in appointments %}
                     <tr>
-                        <td>{{ appointment.start_time|j_date }}</td>
-                        <td>{{ appointment.start_time|j_time }}</td>
+                        <td>{{ forloop.counter }}</td> 
+                        <td>{{ appointment.barber.nickname }}</td>
                         <td>{{ appointment.customer.nickname }}</td>
-                        <td>{{ appointment.barber.username }}</td>
-                        <td><a href="{% url 'salon:confirm_appointment_manager' appointment.id %}"> جزییات</a></td>
+                        <td>{{ appointment.start_time|j_date }}</td>
+                        <td>{{ appointment.start_time|localtime|j_time }} تا {{ appointment.end_time|localtime|j_time }}</td>
                         <td>{{ appointment.get_status_display }}</td>
+                        <td><a href="{% url 'salon:confirm_appointment_manager' appointment.id %}"> جزییات</a></td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -32,5 +46,4 @@
     {% else %}
         <p>هیچ نوبت فعالی برای این آرایشگاه وجود ندارد.</p>
     {% endif %}
-    <a href="{% url 'salon:manage_shop' shop.id %}">بازگشت به مدیریت آرایشگاه</a>
     {% endblock %}
