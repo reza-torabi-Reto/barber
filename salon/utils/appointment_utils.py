@@ -1,9 +1,25 @@
 from datetime import datetime, timedelta
 from django.utils import timezone
-from django.utils.timezone import make_aware, localtime
-
+from django.utils.timezone import localtime
+import jdatetime
 from django.db.models import Sum
 from salon.models import Appointment
+
+def message_nitif(appointment, dt, mt):
+    user = appointment.customer.nickname()
+    shop = appointment.shop.name
+    start_local = localtime(dt)
+    jalali_date = jdatetime.datetime.fromgregorian(datetime=start_local).strftime('%Y/%m/%d')
+    local_clock = start_local.strftime('%H:%M')
+    if mt == 'co':
+        message = f" {user} برای {jalali_date}-{local_clock} نوبت گرفت"
+    elif mt=='cc':
+        message = f" {user} نوبت خود در تاریخ {jalali_date}-{local_clock} را لغو کرد"
+    elif mt=='mo':
+        message = f"مدیر {shop} نوبت شما در تاریخ: {jalali_date}-{local_clock} را تایید کرد"     
+    elif mt=='mc':
+        message = f"مدیر {shop} نوبت شما در تاریخ: {jalali_date}-{local_clock} را لغو کرد"     
+    return message
 
 def get_total_service_duration(services):
     return services.aggregate(total=Sum('duration'))['total'] or 0
@@ -32,15 +48,10 @@ def find_available_time_slots(date, schedule, barber, total_duration): # date=to
     ).values('start_time', 'end_time')
 
     available_slots = []
-    # now = timezone.now()
     now = localtime()  # ساعت فعلی با تایم‌زون صحیح
     future_threshold = now + timedelta(minutes=30)  # حداقل نیم‌ساعت بعد از اکنون
-    # print(f'now: {now}, future_threshold: {future_threshold}')
-    # print("++++++++++++++++")
     current_time = work_start
     slot_interval = timedelta(minutes=30)
-    # print(f"current_time: {current_time}")
-    # print("++++++++++++++++")
     while current_time + timedelta(minutes=total_duration) <= work_end:
         slot_end = current_time + timedelta(minutes=total_duration)
 
@@ -58,9 +69,4 @@ def find_available_time_slots(date, schedule, barber, total_duration): # date=to
         current_time += slot_interval
 
     return available_slots 
-    """ 
-            output -> [
-                    {"start_time": "14:00", "end_time": "14:30"},
-                    {"start_time": "14:30", "end_time": "15:00"},
-                    ...
-                ]"""
+

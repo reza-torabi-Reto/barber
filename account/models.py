@@ -12,7 +12,7 @@ def get_random_filename(instance, filename):
     random_filename = f"{uuid.uuid4()}.{ext}"
     return os.path.join('images/avatars/', random_filename)
 
-
+# account/models.py
 class CustomUser(AbstractUser):
     ROLE_CHOICES = (
         ('manager', 'مدیر'),

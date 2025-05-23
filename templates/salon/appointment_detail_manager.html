@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{%load tz %}
 {% load custom_filters %}
 {% block title %}پروفایل{% endblock %}
 
@@ -19,7 +20,7 @@
         <p><strong>آرایشگر:</strong> {{ appointment.barber.nickname }}</p>
     </div>
     <div class="col-12">
-        <p><strong>تاریخ/زمان:</strong> {{ appointment.start_time|j_date }} {{ appointment.start_time|j_time }}-{{ appointment.end_time|j_time }}</p>
+        <p><strong>تاریخ/زمان:</strong> {{ appointment.start_time|j_date }} {{ appointment.start_time|localtime|j_time }}-{{ appointment.end_time|localtime|j_time }}</p>
     </div>
     <div class="col-12">
         <p><strong>نام مشتری:</strong> {{ appointment.customer.nickname }}</p>
@@ -32,11 +33,20 @@
     </div>
     <div class="col-12 text-left">
         {% if appointment.status == 'pending' %}
-        <form method="post">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-success">تأیید نوبت</button>
-        </form>
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" name="action" value="confirm" class="btn btn-success">تأیید نوبت</button>
+                <button type="submit" name="action" value="cancel" class="btn btn-danger">لغو نوبت</button>
+            </form>
+        {% elif appointment.status == 'confirmed' %}
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" name="action" value="cancel" class="btn btn-danger">لغو نوبت</button>
+            </form>
+        {% elif appointment.status == 'canceled' %}
+            <p class="text-danger">این نوبت قبلاً لغو شده است و قابل تغییر نیست.</p>
         {% endif %}
+
     </div>
 </div>
 {% endblock %}

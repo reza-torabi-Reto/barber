@@ -70,8 +70,8 @@ class Appointment(models.Model):
     STATUS_CHOICES = (
         ('pending', 'در انتظار'),
         ('confirmed', 'تأیید شده'),
-        ('completed', 'تکمیل شده'),
         ('canceled', 'لغو شده'),
+        ('completed', 'تکمیل شده'),
     )
 
     customer = models.ForeignKey('account.CustomUser', on_delete=models.CASCADE, related_name='appointments')
@@ -154,3 +154,25 @@ class ShopSchedule(models.Model):
 
     def __str__(self):
         return f"{self.shop.name} - {self.get_day_of_week_display()}"
+    
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class Notification(models.Model):
+    user = models.ForeignKey('account.CustomUser', on_delete=models.CASCADE, related_name='notifications')
+    appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE, null=True, blank=True)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    url = models.URLField(null=True, blank=True)
+
+    # مثلا نوع نوتیفیکیشن (اختیاری)
+    type = models.CharField(max_length=50, choices=(
+        ('appointment_confirmed', 'Appointment Confirmed'),
+        ('appointment_canceled', 'Appointment Canceled'),
+        ('other', 'Other'),
+    ), default='other')
+    
+    def __str__(self):
+        return f'Notification for {self.user} - Read: {self.is_read}'

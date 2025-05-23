@@ -6,12 +6,16 @@ from django.db.models import Sum
 from datetime import datetime, timedelta, timezone
 from django.utils import timezone
 from django.contrib import messages
+from django.utils.timesince import timesince
+from django.views.decorators.http import require_POST
+import json
+
 from extensions.utils import j_convert_appoiment
 from account.models import CustomUser, BarberProfile
 from account.forms import BarberSignUpForm
-from .utils.appointment_utils  import get_total_service_duration, find_available_time_slots
+from .utils.appointment_utils  import get_total_service_duration, find_available_time_slots, message_nitif
 from .forms import ShopForm, ServiceForm, ShopScheduleFormSet, AppointmentService, ShopEditForm
-from .models import Shop, Service, CustomerShop, ShopSchedule, Appointment
+from .models import Shop, Service, CustomerShop, ShopSchedule, Appointment, Notification
 
 
 # ================ Manager Section ================
@@ -260,23 +264,136 @@ def manager_appointments(request, shop_id):
     })
 # تایید یک نوبت توسط مدیر
 @login_required
-def confirm_appointment_manager(request, id):
+def appointment_detail_manager(request, id):
     if request.user.role != 'manager':
         return redirect('home')
 
     appointment = get_object_or_404(Appointment, id=id)
 
     if request.method == 'POST':
-        appointment.status = 'confirmed'
-        appointment.save()
-        messages.success(request, 'نوبت با موفقیت تایید شد.')
-        shop_id = appointment.shop.id
-        url = reverse('salon:manager_appointments', args=[shop_id])
-        return redirect(url)  
+        action = request.POST.get('action')
+        if appointment.status == 'canceled':
+            messages.warning(request, 'این نوبت قبلاً لغو شده است.')
+        else:
+            if action == 'confirm':
+                appointment.status = 'confirmed'
+                appointment.save()
+                msg_type = 'mo'
+                messages.success(request, 'نوبت با موفقیت تایید شد.')
+            elif action == 'cancel':
+                appointment.status = 'canceled'
+                appointment.save()
+                msg_type = 'mc'
+                messages.success(request, 'نوبت لغو شد.')
 
-    return render(request, 'salon/confirm_appointment_manager.html', {'appointment': appointment})
+            # اعلان به مشتری
+            message = message_nitif(appointment, appointment.start_time, msg_type)
+            Notification.objects.create(
+                user=appointment.customer,
+                message=message,
+                appointment=appointment,
+                url="",
+                type='appointment_update'
+            )
+        return redirect(reverse('salon:manager_appointments', args=[appointment.shop.id]))
+
+
+    return render(request, 'salon/appointment_detail_manager.html', {'appointment': appointment})
+
+@login_required
+def appointment_detail_customer(request, id):
+    if request.user.role != 'customer':
+        return redirect('home')
+
+    appointment = get_object_or_404(Appointment, id=id, customer=request.user)
+
+    if request.method == 'POST':
+        if appointment.status == 'canceled':
+            messages.warning(request, 'این نوبت قبلاً لغو شده است.')
+        elif appointment.status in ['pending', 'confirmed']:
+            appointment.status = 'canceled'
+            appointment.save()
+            messages.success(request, 'نوبت با موفقیت لغو شد.')
+
+            # ارسال اعلان به مدیر سالن
+            message = message_nitif(appointment, appointment.start_time, 'cc')  # cc = cancel by customer
+            Notification.objects.create(
+                user=appointment.shop.manager,
+                message=message,
+                appointment=appointment,
+                url='',
+                type='appointment_canceled',
+            )
+
+        return redirect('salon:customer_appointments')  # صفحه لیست نوبت‌ها
+
+    return render(request, 'salon/appointment_detail_customer.html', {'appointment': appointment})
 
 # ================ Customer Section ================
+# صفحه تایید نوبت توسط 
+@login_required
+def confirm_appointment(request):
+    appointment_data = request.session.get('appointment_data')
+    if not appointment_data:
+        return redirect('account:customer_profile')
+
+    shop = get_object_or_404(Shop, id=appointment_data['shop_id'])
+    services = Service.objects.filter(id__in=appointment_data['services'], shop=shop)
+    barber = get_object_or_404(CustomUser, id=appointment_data['barber_id'], role='barber', barber_profile__shop=shop)
+    date_str = request.GET.get('date')
+    time_str = request.GET.get('time')
+    if not (date_str and time_str):
+        return redirect('salon:select_date_time')
+
+    try:
+        date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        time = datetime.strptime(time_str, '%H:%M').time()
+        start_time = timezone.make_aware(datetime.combine(date, time))
+        # print(f"time: {start_time}") # output -> "time: 2025-05-22 08:00:00+03:30"
+
+    except ValueError:
+        return redirect('salon:select_date_time')
+
+    total_duration = services.aggregate(total=Sum('duration'))['total']
+    total_price = services.aggregate(total=Sum('price'))['total']
+    end_time = start_time + timedelta(minutes=total_duration)
+
+    if request.method == 'POST':
+        appointment = Appointment(
+            customer=request.user,
+            shop=shop,
+            barber=barber,
+            start_time=start_time,
+            end_time=end_time,
+            status='pending'
+        )
+        appointment.save()
+        for service in services:
+            AppointmentService.objects.create(appointment=appointment, service=service)
+        
+            
+        del request.session['appointment_data']
+        message_type = 'co'
+        url = "" #reverse('salon:appointment_detail', args=[appointment.id])    
+        message = message_nitif(appointment, start_time, message_type)
+        Notification.objects.create(
+                            user=shop.manager,  # کاربری که نوبت بهش تعلق داره
+                            message=message,
+                            appointment=appointment,
+                            url=url,
+                            type='appointment_confirmed',
+                                )   
+        return redirect('salon:customer_appointments')
+
+    return render(request, 'salon/confirm_appointment.html', {
+        'shop': shop,
+        'barber': barber,
+        'services': services,
+        'start_time': start_time,
+        'end_time': end_time,
+        'total_price': total_price,
+        'total_duration': total_duration,
+    })
 #نمایش نوبت ها برای مشتری
 @login_required
 def customer_appointments(request):
@@ -450,76 +567,54 @@ def get_available_times(request):
     available_times = find_available_time_slots(selected_date, schedule, barber, total_duration)
     return JsonResponse({'times': available_times})
 
-# صفحه تایید نوبت توسط 
-@login_required
-def confirm_appointment(request):
-    appointment_data = request.session.get('appointment_data')
-    if not appointment_data:
-        return redirect('account:customer_profile')
 
-    shop = get_object_or_404(Shop, id=appointment_data['shop_id'])
-    services = Service.objects.filter(id__in=appointment_data['services'], shop=shop)
-    barber = get_object_or_404(CustomUser, id=appointment_data['barber_id'], role='barber', barber_profile__shop=shop)
-    date_str = request.GET.get('date')
-    time_str = request.GET.get('time')
-    if not (date_str and time_str):
-        return redirect('salon:select_date_time')
-
-    try:
-        date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        time = datetime.strptime(time_str, '%H:%M').time()
-        start_time = timezone.make_aware(datetime.combine(date, time))
-        # print(f"time: {start_time}") # output -> "time: 2025-05-22 08:00:00+03:30"
-
-    except ValueError:
-        return redirect('salon:select_date_time')
-
-    total_duration = services.aggregate(total=Sum('duration'))['total']
-    total_price = services.aggregate(total=Sum('price'))['total']
-    end_time = start_time + timedelta(minutes=total_duration)
-
-    if request.method == 'POST':
-        appointment = Appointment(
-            customer=request.user,
-            shop=shop,
-            barber=barber,
-            start_time=start_time,
-            end_time=end_time,
-            status='pending'
-        )
-        # print(f"start: {start_time}, end: {end_time}") #output -> "start: 2025-05-22 08:00:00+03:30, end: 2025-05-22 09:00:00+03:30"
-        appointment.save()
-        for service in services:
-            AppointmentService.objects.create(appointment=appointment, service=service)
-        del request.session['appointment_data']
-        return redirect('salon:customer_appointments')
-
-    return render(request, 'salon/confirm_appointment.html', {
-        'shop': shop,
-        'barber': barber,
-        'services': services,
-        'start_time': start_time,
-        'end_time': end_time,
-        'total_price': total_price,
-        'total_duration': total_duration,
-    })
 
 
 
 # صفحه مشخصات آرایشگاه برای مشتری
 @login_required
 def shop_detail(request, shop_id):
-    shop = get_object_or_404(Shop, id=shop_id)
-    shop_customer = get_object_or_404(CustomerShop, customer_id=5, shop_id=shop_id)
-    # چک کردن عضویت مشتری
-    # if not CustomerShop.objects.filter(customer=request.user, shop=shop).exists():
+    shop = get_object_or_404(Shop, id=shop_id)    
     if not CustomerShop.objects.filter(customer=request.user, shop=shop).exists():
         return redirect('account:customer_profile')
-    print(f"SHOP= {shop.customer_memberships}")
-    # گرفتن آرایشگرهای آرایشگاه
+    
+    shop_customer = get_object_or_404(CustomerShop, customer_id=request.user, shop_id=shop_id)
+    
     barbers = CustomUser.objects.filter(role='barber', barber_profile__shop=shop)
 
     return render(request, 'salon/shop_detail.html', {
         'shop_customer': shop_customer,
         'barbers': barbers,
     })
+
+import jdatetime
+from django.utils.timezone import localtime
+
+
+
+@login_required
+def get_unread_notifications(request):
+    notifications = request.user.notifications.filter(is_read=False).order_by('-created_at')
+
+    data = []
+    for noti in notifications:
+        data.append({
+            'id': noti.id,
+            'message': noti.message,
+            'created_at': timesince(noti.created_at) + ' پیش',
+            'url': noti.url if noti.url else '',
+        })
+
+    return JsonResponse({'notifications': data})
+@login_required
+@require_POST
+def mark_as_read(request):
+    try:
+        data = json.loads(request.body)
+        notif_id = data.get('id')
+        notification = get_object_or_404(Notification, id=notif_id, user=request.user)
+        notification.is_read = True
+        notification.save()
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)

@@ -38,7 +38,7 @@
                         <td>{{ appointment.start_time|j_date }}</td>
                         <td>{{ appointment.start_time|localtime|j_time }} تا {{ appointment.end_time|localtime|j_time }}</td>
                         <td>{{ appointment.get_status_display }}</td>
-                        <td><a href="{% url 'salon:confirm_appointment_manager' appointment.id %}"> جزییات</a></td>
+                        <td><a href="{% url 'salon:appointment_detail_manager' appointment.id %}"> جزییات</a></td>
                     </tr>
                 {% endfor %}
             </tbody>

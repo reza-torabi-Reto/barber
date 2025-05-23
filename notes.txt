@@ -1,6 +1,13 @@
 token github:
 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
 
+featurs:
+notification-live (polling ajax) :
+    - notif create appointment customer -> ok
+    - notif confirm appointment manager -> ok
+    - notif cancel appointment customer -> 
+    - notif cancel appointment manager -> 
+-------------------------------------------
 PAGES MANAGER:
 
 -register manager: ->ok

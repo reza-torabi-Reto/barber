@@ -1,6 +1,8 @@
 <!-- templates/base.html -->
 {% load custom_filters %}
 {% load static %}
+{% load custom_filters %}
+
 <!DOCTYPE html>
 <html lang="fa">
 <head>
@@ -30,6 +32,14 @@
                     </div>
                 </div>
             </div>
+            <div class="col">
+                <div class="notification-dropdown">
+                    <button id="notification-btn">نوتیفیکیشن‌ها <span id="notif-count" style="color:red;"></span></button>
+                    <ul id="notification-list" style="list-style:none; padding:0; max-height:300px; overflow-y:auto; border:1px solid #ccc; display:none;">
+                        <!-- نوتیفیکیشن‌ها اینجا اضافه می‌شوند -->
+                    </ul>
+                </div>
+            </div>
         </nav>
     </header>
     <div class="container">
@@ -46,6 +56,108 @@
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+    // نمایش یا مخفی کردن لیست نوتیفیکیشن‌ها با کلیک روی دکمه
+    document.getElementById('notification-btn').addEventListener('click', () => {
+        const list = document.getElementById('notification-list');
+        list.style.display = (list.style.display === 'none' || list.style.display === '') ? 'block' : 'none';
+    });
+
+    // دریافت نوتیفیکیشن‌های خوانده نشده
+    function fetchNotifications() {
+        fetch('/salon/notifications/unread/')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('notification-list');
+                container.innerHTML = '';
+
+                // تعداد نوتیفیکیشن‌ها را نمایش بده
+                const notifCountElem = document.getElementById('notif-count');
+                notifCountElem.textContent = data.notifications.length > 0 ? `(${data.notifications.length})` : '';
+
+                if (data.notifications.length === 0) {
+                    container.innerHTML = '<li>نوتیفیکیشنی وجود ندارد</li>';
+                    return;
+                }
+
+                data.notifications.forEach(notif => {
+                    const li = document.createElement('li');
+                    li.style.padding = '8px';
+                    li.style.borderBottom = '1px solid #ddd';
+                    li.style.cursor = 'pointer';
+
+                    // پیام نوتیفیکیشن + لینک به محل مرتبط (اگر وجود داشته باشد)
+                    if (notif.link) {
+                        const a = document.createElement('a');
+                        a.href = notif.link;
+                        a.textContent = notif.message + ' (' + notif.created_at + ')';
+                        a.style.textDecoration = 'none';
+                        a.style.color = 'inherit';
+                        li.appendChild(a);
+                    } else {
+                        li.textContent = notif.message + ' (' + notif.created_at + ')';
+                    }
+
+                    // با کلیک علامت خوانده شدن می‌خورد و از لیست حذف می‌شود
+                    li.onclick = () => markRead(notif.id, li);
+                    container.appendChild(li);
+                });
+            })
+            .catch(err => console.error('خطا در دریافت نوتیفیکیشن:', err));
+    }
+
+    // علامت خوانده شده
+    function markRead(id, element) {
+        fetch('/salon/notifications/mark-read/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken')},
+            body: JSON.stringify({id: id})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                element.remove();
+                // بعد از حذف، تعداد نوتیفیکیشن‌ها رو آپدیت کن
+                updateNotifCount();
+            }
+        })
+        .catch(err => console.error('خطا در علامت گذاری نوتیفیکیشن:', err));
+    }
+
+    // آپدیت تعداد نوتیفیکیشن‌ها بعد از حذف یک مورد
+    function updateNotifCount() {
+        const count = document.getElementById('notification-list').children.length;
+        const notifCountElem = document.getElementById('notif-count');
+        if (count === 0) {
+            notifCountElem.textContent = '';
+            document.getElementById('notification-list').innerHTML = '<li>نوتیفیکیشنی وجود ندارد</li>';
+        } else {
+            notifCountElem.textContent = `(${count})`;
+        }
+    }
+
+    // گرفتن csrftoken از کوکی
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            let cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // هر 500 ثانیه یکبار پولینگ کن
+    setInterval(fetchNotifications, 1000);
+
+    // بار اول صفحه لود شد، اجرا کن
+    fetchNotifications();
+</script>
 {% endblock %}
     
 </body>
