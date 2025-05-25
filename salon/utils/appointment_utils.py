@@ -19,6 +19,8 @@ def message_nitif(appointment, dt, mt):
         message = f"مدیر {shop} نوبت شما در تاریخ: {jalali_date}-{local_clock} را تایید کرد"     
     elif mt=='mc':
         message = f"مدیر {shop} نوبت شما در تاریخ: {jalali_date}-{local_clock} را لغو کرد"     
+    elif mt=='cp':
+        message = f"نوبت شما {user}  در تاریخ: {jalali_date}-{local_clock} با موفقیت انجام شد"     
     return message
 
 def get_total_service_duration(services):

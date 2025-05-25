@@ -26,7 +26,7 @@ urlpatterns = [
     path('confirm-appointment/', views.confirm_appointment, name='confirm_appointment'),
     path('shop_detail/<int:shop_id>/', views.shop_detail, name='shop_detail'),
     path('appointment-detail-manager/<int:id>/', views.appointment_detail_manager, name='appointment_detail_manager'),
-    path('appointments/customer/<int:id>/', views.appointment_detail_customer, name='appointment_detail_customer'),
+    path('appointment-detail-customer/<int:id>/', views.appointment_detail_customer, name='appointment_detail_customer'),
     path('notifications/unread/', views.get_unread_notifications, name='get_unread_notifications'),
      path('notifications/mark-read/', views.mark_as_read, name='mark_notification_read'),
     

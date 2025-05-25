@@ -87,9 +87,9 @@
                     li.style.cursor = 'pointer';
 
                     // پیام نوتیفیکیشن + لینک به محل مرتبط (اگر وجود داشته باشد)
-                    if (notif.link) {
+                    if (notif.url) {
                         const a = document.createElement('a');
-                        a.href = notif.link;
+                        a.href = notif.url;
                         a.textContent = notif.message + ' (' + notif.created_at + ')';
                         a.style.textDecoration = 'none';
                         a.style.color = 'inherit';

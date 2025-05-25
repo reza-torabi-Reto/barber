@@ -8,14 +8,16 @@ from django.utils import timezone
 from django.contrib import messages
 from django.utils.timesince import timesince
 from django.views.decorators.http import require_POST
+from django.utils.timezone import now
 import json
-
 from extensions.utils import j_convert_appoiment
 from account.models import CustomUser, BarberProfile
 from account.forms import BarberSignUpForm
 from .utils.appointment_utils  import get_total_service_duration, find_available_time_slots, message_nitif
 from .forms import ShopForm, ServiceForm, ShopScheduleFormSet, AppointmentService, ShopEditForm
 from .models import Shop, Service, CustomerShop, ShopSchedule, Appointment, Notification
+
+
 
 
 # ================ Manager Section ================
@@ -285,20 +287,58 @@ def appointment_detail_manager(request, id):
                 appointment.save()
                 msg_type = 'mc'
                 messages.success(request, 'نوبت لغو شد.')
-
+            url = reverse('salon:appointment_detail_customer', args=[appointment.id])    
             # اعلان به مشتری
             message = message_nitif(appointment, appointment.start_time, msg_type)
             Notification.objects.create(
                 user=appointment.customer,
                 message=message,
                 appointment=appointment,
-                url="",
+                url=url,
                 type='appointment_update'
             )
         return redirect(reverse('salon:manager_appointments', args=[appointment.shop.id]))
 
 
     return render(request, 'salon/appointment_detail_manager.html', {'appointment': appointment})
+
+
+@login_required
+def complete_appointment(request, id):
+    if request.user.role != 'manager':
+        return redirect('home')
+
+    appointment = get_object_or_404(Appointment, id=id)
+
+    # بررسی وضعیت و زمان نوبت
+    if appointment.status != 'confirmed':
+        messages.error(request, 'فقط نوبت‌های تأییدشده قابل تکمیل هستند.')
+        return redirect('salon:manager_appointments', appointment.shop.id)
+
+    if appointment.end_time > now():
+        messages.error(request, 'هنوز زمان این نوبت به پایان نرسیده است.')
+        return redirect('salon:manager_appointments', appointment.shop.id)
+
+    if request.method == 'POST':
+        appointment.status = 'completed'
+        appointment.save()
+
+        # اعلان برای مشتری
+        msg_type = 'cp'
+        message = message_nitif(appointment, appointment.start_time, msg_type)
+        Notification.objects.create(
+            user=appointment.customer,
+            message=message,
+            appointment=appointment,
+            type='appointment_completed',
+            url='',  # در صورت نیاز لینک به صفحه جزییات نوبت قرار بده
+        )
+
+        messages.success(request, 'نوبت با موفقیت به عنوان تکمیل‌شده ثبت شد.')
+        return redirect('salon:manager_appointments', appointment.shop.id)
+
+    return render(request, 'salon/complete_appointment_confirm.html', {'appointment': appointment})
+
 
 @login_required
 def appointment_detail_customer(request, id):
@@ -316,12 +356,13 @@ def appointment_detail_customer(request, id):
             messages.success(request, 'نوبت با موفقیت لغو شد.')
 
             # ارسال اعلان به مدیر سالن
+            url = reverse('salon:appointment_detail_customer', args=[appointment.id])
             message = message_nitif(appointment, appointment.start_time, 'cc')  # cc = cancel by customer
             Notification.objects.create(
                 user=appointment.shop.manager,
                 message=message,
                 appointment=appointment,
-                url='',
+                url=url,
                 type='appointment_canceled',
             )
 
@@ -330,7 +371,7 @@ def appointment_detail_customer(request, id):
     return render(request, 'salon/appointment_detail_customer.html', {'appointment': appointment})
 
 # ================ Customer Section ================
-# صفحه تایید نوبت توسط 
+# صفحه تایید نوبت توسط مشتری
 @login_required
 def confirm_appointment(request):
     appointment_data = request.session.get('appointment_data')
@@ -374,7 +415,7 @@ def confirm_appointment(request):
             
         del request.session['appointment_data']
         message_type = 'co'
-        url = "" #reverse('salon:appointment_detail', args=[appointment.id])    
+        url = reverse('salon:appointment_detail_manager', args=[appointment.id])    
         message = message_nitif(appointment, start_time, message_type)
         Notification.objects.create(
                             user=shop.manager,  # کاربری که نوبت بهش تعلق داره

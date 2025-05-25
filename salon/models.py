@@ -3,8 +3,7 @@ from django.db import models
 from django.utils import timezone
 from django.db.models import Sum
 from django.core.exceptions import ValidationError
-from datetime import timedelta 
-# from extensions.utils import  jalali_convert
+from django.db.models import Q, UniqueConstraint
 from .utils.generate_referral import generate_referral_code
 
 class Shop(models.Model):
@@ -82,13 +81,16 @@ class Appointment(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
 
+
     class Meta:
         constraints = [
-            models.UniqueConstraint(
+            UniqueConstraint(
                 fields=['barber', 'start_time'],
-                name='unique_barber_appointment'
+                condition=~Q(status='canceled'),
+                name='unique_barber_start_time_active'
             )
         ]
+
 
     def __str__(self):
         return f"{self.customer.username} - Appointment with {self.barber.username} at {self.start_time}"    
