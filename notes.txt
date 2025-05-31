@@ -1,5 +1,3 @@
-token github:
-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
 
 featurs:
 notification-live (polling ajax) :
@@ -8,18 +6,20 @@ notification-live (polling ajax) :
     - notif cancel appointment customer -> ok
     - notif cancel appointment manager -> ok
 -------------------------------------------
-وقتی نوبت در انتظاره و زمانش نگذتشه:
+وقتی نوبت در انتظاره و زمانش نگذشته:
 وضعیت: انتظار - دکمه: تایید/لغو
 
 وقتی نوبت در انتظاره و زمانش گذشته
 وضعیت: گذشته - دکمه: نداره
 
 وقتی نوبت در تاییده و زمانش نگذتشه:
-تایید
+وضعیت: تایید - دکمه: لغو
 
-لغو
+وقتی نوبت در تاییده و زمانش گذتشه:
+وضعیت: تمکبل - دکمه: تکمیل
 
-تکمیل
+وقتی نوبت در تکمیله و زمانش گذشته
+وضعیت: تکمیل
 
 
 

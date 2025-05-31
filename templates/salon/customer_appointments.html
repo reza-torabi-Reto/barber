@@ -44,7 +44,6 @@
                         <td>{{ appointment.start_time|localtime|j_time }}</td>
                         <td>{{ appointment.end_time|localtime|j_time }}</td>
                         <td>
-
                             {% if appointment.status == 'pending' %}
                             {% if appointment.start_time > now %}
                                 در انتظار تایید
@@ -62,7 +61,6 @@
                             {% elif appointment.status == 'canceled' %}
                                 لغو شده
                             {% endif %}
-
                         </td>
                         <td>
                             {% if appointment.status == 'pending' %}

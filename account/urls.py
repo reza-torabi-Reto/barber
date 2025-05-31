@@ -24,5 +24,11 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(next_page='account:login'), name='logout'),
     path('login/', CustomLoginView.as_view(), name='login'),
 
-    # path('error/', error, name='error'),
+]
+
+# API Urls:
+from .api.api_views import ManagerSignupAPIView
+
+urlpatterns += [
+    path('api/signup/manager/', ManagerSignupAPIView.as_view(), name='api_signup_manager'),
 ]

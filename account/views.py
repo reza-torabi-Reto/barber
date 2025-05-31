@@ -44,6 +44,7 @@ def manager_signup(request):
         form = ManagerSignUpForm()
     return render(request, 'account/manager_signup.html', {'form': form})
 
+
 @login_required
 def profile(request):
     if request.user.role != 'manager':
