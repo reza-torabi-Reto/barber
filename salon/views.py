@@ -9,15 +9,16 @@ from django.contrib import messages
 from django.utils.timesince import timesince
 from django.views.decorators.http import require_POST
 from django.utils.timezone import now
+from django.db.models import Q
 import json
 from extensions.utils import j_convert_appoiment
 from account.models import CustomUser, BarberProfile
 from account.forms import BarberSignUpForm
-from .utils.appointment_utils  import get_total_service_duration, find_available_time_slots, message_nitif
+from .utils.appointment_utils  import get_total_service_duration, find_available_time_slots, message_nitif, jalali_str_to_gregorian_date
 from .forms import ShopForm, ServiceForm, ShopScheduleFormSet, AppointmentService, ShopEditForm
 from .models import Shop, Service, CustomerShop, ShopSchedule, Appointment, Notification
 
-
+# from jalali_date import datetime2jalali, jalali2datetime
 
 
 # ================ Manager Section ================
@@ -259,11 +260,60 @@ def manager_appointments(request, shop_id):
         appointments = base_qs.filter(shop=shop, start_time__date=timezone.now().date()).order_by('-start_time') 
     else:
         appointments = base_qs.filter(shop=shop).order_by('-start_time') 
-
+    
     return render(request, 'salon/manager_appointments.html', {
         'shop': shop,
-        'appointments': appointments
+        'appointments': appointments,
+        'now': timezone.now(),
     })
+
+
+def manager_appointments_test(request, shop_id):
+    j_date_str = request.GET.get('date')
+    status_filter = request.GET.get('status')
+
+    today = datetime.today().date()
+    if j_date_str:
+        try:
+            selected_date = jdatetime.date(*map(int, j_date_str.split('-'))).togregorian()
+        except:
+            selected_date = today
+    else:
+        selected_date = today
+
+    start_of_day = datetime.combine(selected_date, datetime.min.time())
+    end_of_day = datetime.combine(selected_date, datetime.max.time())
+
+    # آرایشگرهای این فروشگاه
+    barbers_in_shop = BarberProfile.objects.filter(shop_id=shop_id).values_list('user_id', flat=True)
+
+    appointments = Appointment.objects.filter(
+        start_time__range=(start_of_day, end_of_day),
+        barber_id__in=barbers_in_shop,
+    ).select_related('barber', 'customer')
+
+    if status_filter in ['pending', 'confirmed', 'completed', 'canceled']:
+        appointments = appointments.filter(status=status_filter)
+
+    previous_day = selected_date - timedelta(days=1)
+    next_day = selected_date + timedelta(days=1)
+
+    context = {
+        'appointments': appointments.order_by('start_time'),
+        'shop_id': shop_id,
+        'selected_date': jdatetime.date.fromgregorian(date=selected_date).strftime('%Y-%m-%d'),
+        'previous_date': jdatetime.date.fromgregorian(date=previous_day).strftime('%Y-%m-%d'),
+        'next_date': jdatetime.date.fromgregorian(date=next_day).strftime('%Y-%m-%d'),
+        'status_filter': status_filter,
+        'now': timezone.now(),
+
+    }
+
+    return render(request, 'salon/manager_appointments_test.html', context)
+
+
+
+
 # تایید یک نوبت توسط مدیر
 @login_required
 def appointment_detail_manager(request, id):
@@ -284,6 +334,7 @@ def appointment_detail_manager(request, id):
                 messages.success(request, 'نوبت با موفقیت تایید شد.')
             elif action == 'cancel':
                 appointment.status = 'canceled'
+                appointment.canceled_by = 'manager'
                 appointment.save()
                 msg_type = 'mc'
                 messages.success(request, 'نوبت لغو شد.')
@@ -300,11 +351,11 @@ def appointment_detail_manager(request, id):
         return redirect(reverse('salon:manager_appointments', args=[appointment.shop.id]))
 
 
-    return render(request, 'salon/appointment_detail_manager.html', {'appointment': appointment})
+    return render(request, 'salon/appointment_detail_manager.html', {'appointment': appointment, 'now': timezone.now(),})
 
 
 @login_required
-def complete_appointment(request, id):
+def complete_appointment_confirm(request, id):
     if request.user.role != 'manager':
         return redirect('home')
 
@@ -324,15 +375,15 @@ def complete_appointment(request, id):
         appointment.save()
 
         # اعلان برای مشتری
-        msg_type = 'cp'
-        message = message_nitif(appointment, appointment.start_time, msg_type)
-        Notification.objects.create(
-            user=appointment.customer,
-            message=message,
-            appointment=appointment,
-            type='appointment_completed',
-            url='',  # در صورت نیاز لینک به صفحه جزییات نوبت قرار بده
-        )
+        # msg_type = 'cp'
+        # message = message_nitif(appointment, appointment.start_time, msg_type)
+        # Notification.objects.create(
+        #     user=appointment.customer,
+        #     message=message,
+        #     appointment=appointment,
+        #     type='appointment_completed',
+        #     url='',  # در صورت نیاز لینک به صفحه جزییات نوبت قرار بده
+        # )
 
         messages.success(request, 'نوبت با موفقیت به عنوان تکمیل‌شده ثبت شد.')
         return redirect('salon:manager_appointments', appointment.shop.id)
@@ -352,6 +403,7 @@ def appointment_detail_customer(request, id):
             messages.warning(request, 'این نوبت قبلاً لغو شده است.')
         elif appointment.status in ['pending', 'confirmed']:
             appointment.status = 'canceled'
+            appointment.canceled_by = 'customer'
             appointment.save()
             messages.success(request, 'نوبت با موفقیت لغو شد.')
 

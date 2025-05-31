@@ -16,6 +16,14 @@
 
 {% block content %} 
 <div class="row">
+    {% if appointment.status == 'confirmed' and appointment.start_time > now  %}    
+        <div class="col-12">
+            <div class="alert alert-warning">
+            آیا از لغو نوبت زیر مطمئن هستید؟
+            </div>
+        </div>
+    {% endif %}
+    
     <div class="col-12">
         <p><strong>آرایشگر:</strong> {{ appointment.barber.nickname }}</p>
     </div>
@@ -29,24 +37,37 @@
         <p><strong>خدمات:</strong> {{ appointment|get_services }}</p>
     </div>
     <div class="col-12">
-        <p><strong>وضعیت:</strong> {{ appointment.get_status_display }}</p>
-    </div>
+        <p>
+            <strong>وضعیت:</strong>        
+            {% if appointment.status == 'canceled' and appointment.canceled_by %}
+                <span style="color: red;">این نوبت توسط {{ appointment.get_canceled_by_display }} لغو شده است.</span>
+            {% elif appointment.status == 'pending' and appointment.start_time < now  %}
+                <span style="color: gray;">این نوبت منقضی شده است.</span>
+            {% else %}
+                {{ appointment.get_status_display }}
+            {% endif %}
+
+        </p>
+        </div>
     <div class="col-12 text-left">
-        {% if appointment.status == 'pending' %}
+        {% if appointment.status == 'pending' and appointment.start_time > now  %}
             <form method="post">
                 {% csrf_token %}
                 <button type="submit" name="action" value="confirm" class="btn btn-success">تأیید نوبت</button>
                 <button type="submit" name="action" value="cancel" class="btn btn-danger">لغو نوبت</button>
             </form>
-        {% elif appointment.status == 'confirmed' %}
+        {% elif appointment.status == 'confirmed' and appointment.start_time > now  %}
             <form method="post">
                 {% csrf_token %}
                 <button type="submit" name="action" value="cancel" class="btn btn-danger">لغو نوبت</button>
             </form>
-        {% elif appointment.status == 'canceled' %}
-            <p class="text-danger">این نوبت قبلاً لغو شده است و قابل تغییر نیست.</p>
+        
+        {% elif appointment.status == 'confirmed' and appointment.start_time < now %}
+        <form method="post" action="{% url 'salon:complete_appointment_confirm' appointment.id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success mt-2">تکمیل نوبت</button>
+        </form>            
         {% endif %}
-
     </div>
 </div>
 {% endblock %}

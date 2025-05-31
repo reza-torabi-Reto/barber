@@ -14,6 +14,7 @@
     <!-- Custom CSS -->
      
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="{% static 'css/mystyles.css' %}">
     {% block mycss%}{% endblock %}
 </head>
@@ -34,7 +35,9 @@
             </div>
             <div class="col">
                 <div class="notification-dropdown">
-                    <button id="notification-btn">نوتیفیکیشن‌ها <span id="notif-count" style="color:red;"></span></button>
+                    <button id="notification-btn">
+                        <i class="fa fa-bell" aria-hidden="true"></i> <span id="notif-count" style="color:red;"></span>
+                    </button>
                     <ul id="notification-list" style="list-style:none; padding:0; max-height:300px; overflow-y:auto; border:1px solid #ccc; display:none;">
                         <!-- نوتیفیکیشن‌ها اینجا اضافه می‌شوند -->
                     </ul>
@@ -153,7 +156,7 @@
     }
 
     // هر 500 ثانیه یکبار پولینگ کن
-    setInterval(fetchNotifications, 1000);
+    setInterval(fetchNotifications, 10000);
 
     // بار اول صفحه لود شد، اجرا کن
     fetchNotifications();

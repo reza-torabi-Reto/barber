@@ -86,3 +86,8 @@ a { color: #007bff; text-decoration: none; }
 a:hover { text-decoration: underline; }
 .service-container { margin-bottom: 10px; }
 nav a { margin-left: 5px;}
+#notification-btn{
+    background-color: transparent; padding: 2px 1px 2px 5px;color: #656570;font-size: 18px;display: flex;align-items: center;
+}
+#notification-btn i{margin-left: 4px;}
+#notification-btn span{font-size: 14px;margin-bottom: 1px;}

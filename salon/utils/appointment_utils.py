@@ -5,6 +5,23 @@ import jdatetime
 from django.db.models import Sum
 from salon.models import Appointment
 
+
+def jalali_str_to_gregorian_date(j_date_str):
+    """
+    تبدیل رشته تاریخ شمسی (مثلاً '1403-03-06') به شیء تاریخ میلادی (datetime.date)
+    """
+    try:
+        # تبدیل رشته به تاریخ شمسی
+        j_date = jdatetime.date.fromisoformat(j_date_str)  # ورودی باید به صورت 'yyyy-mm-dd' باشه
+        # تبدیل به datetime.date میلادی
+        g_date = j_date.togregorian()
+        return g_date
+    except Exception as e:
+        print("تبدیل تاریخ با خطا مواجه شد:", e)
+        return None
+
+
+
 def message_nitif(appointment, dt, mt):
     user = appointment.customer.nickname()
     shop = appointment.shop.name

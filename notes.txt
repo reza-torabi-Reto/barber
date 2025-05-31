@@ -5,9 +5,29 @@ featurs:
 notification-live (polling ajax) :
     - notif create appointment customer -> ok
     - notif confirm appointment manager -> ok
-    - notif cancel appointment customer -> 
-    - notif cancel appointment manager -> 
+    - notif cancel appointment customer -> ok
+    - notif cancel appointment manager -> ok
 -------------------------------------------
+وقتی نوبت در انتظاره و زمانش نگذتشه:
+وضعیت: انتظار - دکمه: تایید/لغو
+
+وقتی نوبت در انتظاره و زمانش گذشته
+وضعیت: گذشته - دکمه: نداره
+
+وقتی نوبت در تاییده و زمانش نگذتشه:
+تایید
+
+لغو
+
+تکمیل
+
+
+
+
+
+
+
+
 PAGES MANAGER:
 
 -register manager: ->ok

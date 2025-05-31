@@ -30,7 +30,7 @@
                     <th>زمان شروع</th>
                     <th>زمان پایان</th>
                     <th>وضعیت</th>
-                    <th>جزئیات</th>
+                    <th>عملیات</th>
                 </tr>
             </thead>
             <tbody>
@@ -43,9 +43,55 @@
                         <td>{{ appointment.start_time|j_date }}</td>
                         <td>{{ appointment.start_time|localtime|j_time }}</td>
                         <td>{{ appointment.end_time|localtime|j_time }}</td>
-                        <td>{{ appointment.get_status_display }}</td>
                         <td>
-                            <a href="{% url 'salon:appointment_detail_customer' appointment.id %}" class="btn btn-info btn-sm">جزئیات</a>
+
+                            {% if appointment.status == 'pending' %}
+                            {% if appointment.start_time > now %}
+                                در انتظار تایید
+                            {% else %}
+                                منقضی شده
+                            {% endif %}
+                            {% elif appointment.status == 'confirmed' %}
+                                {% if appointment.start_time > now %}
+                                    تأیید شده
+                                {% else %}
+                                    انجام شده
+                                {% endif %}
+                            {% elif appointment.status == 'completed' %}
+                                انجام شد
+                            {% elif appointment.status == 'canceled' %}
+                                لغو شده
+                            {% endif %}
+
+                        </td>
+                        <td>
+                            {% if appointment.status == 'pending' %}
+                                {% if appointment.start_time > now %}
+                                    <a href="{% url 'salon:appointment_detail_manager' appointment.id %}" class="text-info text-decoration-none">
+                                        <i class="bi bi-check-circle"></i> لغو
+                                    </a>
+                                {% else %}
+                                    <a href="{% url 'salon:appointment_detail_manager' appointment.id %}" class="text-info text-decoration-none">
+                                        <i class="bi bi-info-circle"></i> جزییات
+                                    </a>
+                                {% endif %}
+                            {% elif appointment.status == 'confirmed' %}
+                                {% if appointment.start_time > now %}
+                                    <a href="{% url 'salon:appointment_detail_manager' appointment.id %}" class="text-danger text-decoration-none">
+                                        <i class="bi bi-x-circle"></i> لغو نوبت
+                                    </a>
+                                {% endif %}
+                            {% elif appointment.status == 'completed' %}
+                                <a href="{% url 'salon:appointment_detail_manager' appointment.id %}" class="text-info text-decoration-none">
+                                    <span class="text-success">
+                                        <i class="bi bi-check2-circle"></i> جزئیات
+                                    </span>
+                                </a>
+                            {% elif appointment.status == 'canceled' %}
+                                <a href="{% url 'salon:appointment_detail_manager' appointment.id %}" class="text-info text-decoration-none">
+                                    <i class="bi bi-info-circle"></i> جزئیات
+                                </a>
+                            {% endif %}
                         </td>
                     </tr>
                 {% endfor %}

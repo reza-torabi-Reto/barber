@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}تکمیل نوبت{% endblock %}
+
+{% block navright %}
+<h4>{{ appointment.shop.name }} | تکمیل نوبت</h4>
+{% endblock %}
+
+{% block content %}
+<div class="alert alert-warning">
+    آیا از تکمیل نوبت زیر مطمئن هستید؟
+</div>
+<ul>
+    <li><strong>مشتری:</strong> {{ appointment.customer.nickname }}</li>
+    <li><strong>آرایشگر:</strong> {{ appointment.barber.nickname }}</li>
+    <li><strong>تاریخ:</strong> {{ appointment.start_time|date:"Y/m/d H:i" }}</li>
+</ul>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-success">تکمیل نوبت</button>
+    <a href="{% url 'salon:manager_appointments' appointment.shop.id %}" class="btn btn-secondary">انصراف</a>
+</form>
+{% endblock %}
