@@ -1,3 +1,48 @@
+API-React Native 
+
+-logout: api->ok
+-logon: api->ok / react->
+
+-manager register:  api->ok /   react-> 
+-manager profile:   api->ok /   react->
+-manager profile update:    api->ok/    react->
+
+
+-shop create:   api->ok   /   react->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////
 
 featurs:
 notification-live (polling ajax) :
@@ -6,27 +51,6 @@ notification-live (polling ajax) :
     - notif cancel appointment customer -> ok
     - notif cancel appointment manager -> ok
 -------------------------------------------
-وقتی نوبت در انتظاره و زمانش نگذشته:
-وضعیت: انتظار - دکمه: تایید/لغو
-
-وقتی نوبت در انتظاره و زمانش گذشته
-وضعیت: گذشته - دکمه: نداره
-
-وقتی نوبت در تاییده و زمانش نگذتشه:
-وضعیت: تایید - دکمه: لغو
-
-وقتی نوبت در تاییده و زمانش گذتشه:
-وضعیت: تمکبل - دکمه: تکمیل
-
-وقتی نوبت در تکمیله و زمانش گذشته
-وضعیت: تکمیل
-
-
-
-
-
-
-
 
 PAGES MANAGER:
 

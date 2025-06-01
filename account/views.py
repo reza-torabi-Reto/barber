@@ -1,6 +1,6 @@
 # account/views.py
 from django.shortcuts import render, redirect, get_object_or_404, HttpResponseRedirect
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import login 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.urls import reverse

@@ -29,9 +29,7 @@ ALLOWED_HOSTS = []
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
-# LOGOUT_REDIRECT_URL = 'account:home'
 LOGIN_URL = 'account:login'
-# LOGOUT_REDIRECT_URL = 'account:logout'
 AUTH_USER_MODEL = 'account.CustomUser'
 # Application definition
 
@@ -58,6 +56,23 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+
+INSTALLED_APPS += [
+    'rest_framework_simplejwt.token_blacklist',
+]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+SIMPLE_JWT = {
+    'BLACKLIST_AFTER_ROTATION': True,
+    'ROTATE_REFRESH_TOKENS': False,
+}
+
 
 ROOT_URLCONF = 'core.urls'
 

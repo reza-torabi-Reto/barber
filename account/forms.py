@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import CustomUser, ManagerProfile, BarberProfile, CustomerProfile
 import re
+
 class ManagerSignUpForm(UserCreationForm):
     phone = forms.CharField(max_length=15, required=True)
     avatar = forms.ImageField(required=False)
@@ -40,12 +41,6 @@ class CustomerSignUpForm(UserCreationForm):
 
 class BarberSignUpForm(UserCreationForm):
     phone = forms.CharField(max_length=15,required=True,label='شماره تلفن')
-    # phone = forms.CharField(
-    #     max_length=15,
-    #     required=True,
-    #     label='شماره تلفن',
-    #     help_text='شماره تلفن باید با 09 شروع شده و 11 رقم باشد (مثال: 09123456789)'
-    # )
 
     class Meta:
         model = CustomUser
@@ -57,17 +52,6 @@ class BarberSignUpForm(UserCreationForm):
             'password1': 'گذرواژه',
             'password2': 'تأیید گذرواژه',
         }
-
-    # def clean_phone(self):
-    #     phone = self.cleaned_data.get('phone')
-    #     if not phone:
-    #         raise forms.ValidationError('شماره تلفن الزامی است.')
-    #     if not re.match(r'^09\d{9}$', phone):
-    #         raise forms.ValidationError('شماره تلفن باید با 09 شروع شده و 11 رقم باشد.')
-    #     # بررسی یکتایی شماره تلفن
-    #     if CustomUser.objects.filter(phone=phone).exists():
-    #         raise forms.ValidationError('این شماره تلفن قبلاً ثبت شده است.')
-    #     return phone
 
     def clean_username(self):
         username = self.cleaned_data.get('username')

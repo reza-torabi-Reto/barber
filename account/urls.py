@@ -27,8 +27,13 @@ urlpatterns = [
 ]
 
 # API Urls:
-from .api.api_views import ManagerSignupAPIView
+from .api.api_views import CustomLoginAPIView, LogoutAPIView, ManagerSignupAPIView, ManagerProfileAPIView,update_manager_profile
 
 urlpatterns += [
-    path('api/signup/manager/', ManagerSignupAPIView.as_view(), name='api_signup_manager'),
+    path('api/token/', CustomLoginAPIView.as_view(), name='api-token-obtain'),
+    path('api/logout/', LogoutAPIView.as_view(), name='api-logout'),
+    path('api/signup/manager/', ManagerSignupAPIView.as_view(), name='api-manager-signup'),
+    path('api/manager/profile/', ManagerProfileAPIView.as_view(), name='manager-profile-api'),
+    path('api/update/manager/profile/', update_manager_profile, name='manager-profile-update'),
+
 ]
