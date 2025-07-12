@@ -1,14 +1,22 @@
 API-React Native 
 
 -logout: api->ok
--logon: api->ok / react->
+-logon:  api->ok / react->
 
--manager register:  api->ok /   react-> 
+-manager register:  api->ok /   react->ok 
 -manager profile:   api->ok /   react->
--manager profile update:    api->ok/    react->
+-manager update:    api->ok /    react->
 
 
--shop create:   api->ok   /   react->
+-shop create:api->ok   /   react->
+-shop edit:  api->ok   /   react->
+
+-barber create: api->ok   /   react->
+-barber delete: api->ok   /   react->
+
+-service create: api->ok  /   react->
+-service edit:   api->ok  /   react->
+-service delete: api->ok  /   react->
 
 
 

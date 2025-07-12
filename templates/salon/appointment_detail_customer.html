@@ -9,22 +9,31 @@
 {% endblock %}
 
 {% block content %}
+
 <div class="row">
     <div class="col-12"><strong>آرایشگاه:</strong> {{ appointment.shop.name }}</div>
     <div class="col-12"><strong>آرایشگر:</strong> {{ appointment.barber.nickname }}</div>
     <div class="col-12"><strong>تاریخ/زمان:</strong> {{ appointment.start_time|j_date }} {{ appointment.start_time|localtime|j_time }}</div>
-    <div class="col-12"><strong>وضعیت:</strong> {{ appointment.get_status_display }}</div>
     <div class="col-12"><strong>خدمات:</strong> {{ appointment|get_services }}</div>
+    <div class="col-12"><strong>وضعیت:</strong>
+        {% if appointment.status == 'canceled' %} <!--  and appointment.canceled_by -->
+            <span style="color: red;">این نوبت توسط {{ appointment.get_canceled_by_display }} لغو شده است.</span>
+        
+        {% elif appointment.status == 'pending'  and appointment.start_time < now  %}
+            <span style="color: gray;">این نوبت منقضی شده است.</span>
+        
+        {% endif %}
+    </div>
+    
 
-    {% if appointment.status != 'canceled' %}
+
+    {% if appointment.status == 'pending' and appointment.start_time > now  %}
     <div class="col-12 mt-3">
         <form method="post">
             {% csrf_token %}
             <button type="submit" class="btn btn-danger">لغو نوبت</button>
         </form>
     </div>
-    {% else %}
-    <div class="col-12 mt-3 text-danger">این نوبت قبلاً لغو شده است.</div>
     {% endif %}
 </div>
 {% endblock %}

@@ -4,7 +4,22 @@ from django.utils import timezone
 from django.db.models import Sum
 from django.core.exceptions import ValidationError
 from django.db.models import Q, UniqueConstraint
+import uuid
+import os
+
 from .utils.generate_referral import generate_referral_code
+
+
+def get_random_logo_name(instance, filename):
+    ext = filename.split('.')[-1]
+    random_filename = f"{uuid.uuid4()}.{ext}"
+    return os.path.join('images/logo_shop/', random_filename)
+
+
+def get_random_image_shop_name(instance, filename):
+    ext = filename.split('.')[-1]
+    random_filename = f"{uuid.uuid4()}.{ext}"
+    return os.path.join('images/image_shop/', random_filename)
 
 class Shop(models.Model):
     STATUS_CHOISE = (
@@ -21,7 +36,8 @@ class Shop(models.Model):
     phone = models.CharField(max_length=15, verbose_name="شماره تماس")
     status = models.CharField(max_length=10, choices=STATUS_CHOISE, default='active', verbose_name="وضعیت")
     create_date = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
-    
+    logo = models.ImageField(upload_to=get_random_logo_name, blank=True, null=True)    
+    image_shop = models.ImageField(upload_to=get_random_image_shop_name, blank=True, null=True)
     # latitude = models.FloatField(null=True, blank=True, verbose_name="عرض جغرافیایی")
     # longitude = models.FloatField(null=True, blank=True, verbose_name="طول جغرافیایی")
     
@@ -36,7 +52,9 @@ class Shop(models.Model):
     class Meta:
         verbose_name = "آرایشگاه"
         verbose_name_plural = "آرایشگاه‌ها"
-# salon/models.py
+
+
+
 class Service(models.Model):
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE, related_name='services', verbose_name="آرایشگاه")
     barber = models.ForeignKey('account.BarberProfile', on_delete=models.SET_NULL, null=True, blank=True, related_name='services', verbose_name="آرایشگر")

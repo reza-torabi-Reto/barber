@@ -52,7 +52,6 @@ def manage_shop(request, shop_id):
     base_qs = Appointment.objects.filter(shop=shop)
     all_appointment_count = base_qs.filter().count()
     pending_appointment_count = base_qs.filter(status='pending').count()
-    print(f"Date now: {timezone.now().date()}")
     today_appointment_count = base_qs.filter(start_time__date=timezone.now().date()).count()
     return render(request, 'salon/manage_shop.html', {
         'shop': shop,
@@ -140,13 +139,10 @@ def manage_schedule(request, shop_id):
 def create_barber(request, shop_id):
     if request.user.role != 'manager':
         return redirect('home')
-    print('1')
     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
     if request.method == 'POST':
         form = BarberSignUpForm(request.POST) #->, request.FILES
-        print('2')
         if form.is_valid():
-            print('3')
             form.save(shop=shop)
             return redirect('salon:manage_shop', shop_id=shop.id)
         else:
@@ -420,7 +416,7 @@ def appointment_detail_customer(request, id):
 
         return redirect('salon:customer_appointments')  # صفحه لیست نوبت‌ها
 
-    return render(request, 'salon/appointment_detail_customer.html', {'appointment': appointment})
+    return render(request, 'salon/appointment_detail_customer.html', {'appointment': appointment, 'now': timezone.now(),})
 
 # ================ Customer Section ================
 # صفحه تایید نوبت توسط مشتری
@@ -625,9 +621,13 @@ def select_date_time(request):
         'error': 'هیچ روز آزادی برای رزرو در ۸ روز آینده در دسترس نیست.' if not jalali_dates else None,
     })
 
+import logging
+logger = logging.getLogger(__name__)
+
 # نمایش ساعت های خالی روزهای هفته در صفحه:(select_date_time) 
 @login_required
 def get_available_times(request):
+    logger.debug(f"Received GET params: {request.GET}")
     
     if request.user.role != 'customer':
         return redirect('home')
@@ -667,6 +667,7 @@ def get_available_times(request):
 # صفحه مشخصات آرایشگاه برای مشتری
 @login_required
 def shop_detail(request, shop_id):
+
     shop = get_object_or_404(Shop, id=shop_id)    
     if not CustomerShop.objects.filter(customer=request.user, shop=shop).exists():
         return redirect('account:customer_profile')
@@ -688,7 +689,7 @@ from django.utils.timezone import localtime
 @login_required
 def get_unread_notifications(request):
     notifications = request.user.notifications.filter(is_read=False).order_by('-created_at')
-
+    print(f"Noti= {notifications}")
     data = []
     for noti in notifications:
         data.append({

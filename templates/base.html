@@ -68,7 +68,7 @@
 
     // دریافت نوتیفیکیشن‌های خوانده نشده
     function fetchNotifications() {
-        fetch('/salon/notifications/unread/')
+        fetch('/shop/notifications/unread/')
             .then(response => response.json())
             .then(data => {
                 const container = document.getElementById('notification-list');
@@ -111,7 +111,7 @@
 
     // علامت خوانده شده
     function markRead(id, element) {
-        fetch('/salon/notifications/mark-read/', {
+        fetch('/shop/notifications/mark-read/', {
             method: 'POST',
             headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken')},
             body: JSON.stringify({id: id})

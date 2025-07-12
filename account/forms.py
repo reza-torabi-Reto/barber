@@ -74,6 +74,7 @@ class BarberSignUpForm(UserCreationForm):
                 )
         return user
 
+
 class BarberProfileForm(forms.ModelForm):
     phone = forms.CharField(max_length=15, required=False)
     first_name = forms.CharField(max_length=30, required=False)

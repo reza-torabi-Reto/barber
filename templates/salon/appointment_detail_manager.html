@@ -41,6 +41,7 @@
             <strong>وضعیت:</strong>        
             {% if appointment.status == 'canceled' and appointment.canceled_by %}
                 <span style="color: red;">این نوبت توسط {{ appointment.get_canceled_by_display }} لغو شده است.</span>
+            
             {% elif appointment.status == 'pending' and appointment.start_time < now  %}
                 <span style="color: gray;">این نوبت منقضی شده است.</span>
             {% else %}
