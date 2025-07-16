@@ -175,7 +175,60 @@ class ShopSchedule(models.Model):
 
     def __str__(self):
         return f"{self.shop.name} - {self.get_day_of_week_display()}"
-    
+
+
+
+class BarberSchedule(models.Model):
+    DAY_CHOICES = (
+        ('saturday', 'شنبه'),
+        ('sunday', 'یک‌شنبه'),
+        ('monday', 'دوشنبه'),
+        ('tuesday', 'سه‌شنبه'),
+        ('wednesday', 'چهارشنبه'),
+        ('thursday', 'پنج‌شنبه'),
+        ('friday', 'جمعه'),
+    )
+
+    shop = models.ForeignKey(Shop, on_delete=models.CASCADE, related_name='schedule')
+    barber = models.ForeignKey('account.BarberProfile', on_delete=models.CASCADE, related_name='schedules_barber')
+    day_of_week = models.CharField(max_length=10, choices=DAY_CHOICES)
+    is_open = models.BooleanField(default=True)
+    start_time = models.TimeField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
+    break_start = models.TimeField(null=True, blank=True)
+    break_end = models.TimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('shop', 'barber', 'day_of_week')  
+
+    def clean(self):
+        if self.is_open:
+            if not self.start_time or not self.end_time:
+                raise ValidationError("Start time and end time are required if the shop is open.")
+            if self.start_time >= self.end_time:
+                raise ValidationError("End time must be after start time.")
+            if self.break_start and self.break_end:
+                if self.break_start >= self.break_end:
+                    raise ValidationError("Break end time must be after break start time.")
+                if self.break_start < self.start_time or self.break_end > self.end_time:
+                    raise ValidationError("Break time must be within working hours.")
+            elif (self.break_start and not self.break_end) or (self.break_end and not self.break_start):
+                raise ValidationError("Both break start and break end times must be provided, or neither.")
+        else:
+            self.start_time = None
+            self.end_time = None
+            self.break_start = None
+            self.break_end = None
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.shop.name} - {self.get_day_of_week_display()}"
+
+
+
 from django.contrib.auth import get_user_model
 
 User = get_user_model()

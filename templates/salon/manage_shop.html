@@ -39,6 +39,15 @@
             <a href="{% url 'salon:manage_schedule' shop.id %}" class="btn btn-primary">
                 مدیریت تنظیمات (روزهای کاری و ساعات)
             </a>
+
+
+            {% for barber in shop.barberprofile_set.all %}
+            <a href="{% url 'salon:manage_barber_schedule' shop.id %}?barber={{ barber.id }}" class="btn btn-sm btn-outline-primary">
+                تنظیم ساعات کاری {{ barber.user.get_full_name }}
+            </a>
+            {% endfor %}
+        
+
             <a href="{% url 'salon:edit_shop' shop.id %}" class="btn btn-primary mr-2">
                 ویرایش اطلاعات
             </a>
@@ -53,7 +62,7 @@
             <h4>بخش نوبت ها</h4>
         </div>
         <div class="col-md-8 d-flex justify-content-end">
-                <a href="{% url 'salon:manager_appointments_test' shop.id %}" class="btn btn-primary">همه نوبت های تست ({{all_appointment_count}})</a>     
+                <a href="{% url 'salon:manager_appointments_days' shop.id %}" class="btn btn-primary">نوبت ها براساس روز ({{all_appointment_count}})</a>     
                 <a href="{% url 'salon:manager_appointments' shop.id %}" class="btn btn-primary">همه نوبت ها ({{all_appointment_count}})</a>     
                 <a href="{% url 'salon:manager_appointments' shop.id %}?pending=2" class="btn btn-primary mr-2">نوبت های امروز ({{today_appointment_count}})</a>
                 <a href="{% url 'salon:manager_appointments' shop.id %}?pending=1" class="btn btn-primary mr-2">نوبت های تأیید نشده ({{pending_appointment_count}})</a>

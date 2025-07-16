@@ -3,9 +3,15 @@
 {% load custom_filters %}
 
 {% block title %}جزئیات نوبت{% endblock %}
-
+{% block navleft %}
+<a href="{% url 'salon:customer_appointments' %}" class="btn btn-secondary">بازگشت به مدیریت</a>
+<form method="post" action="{% url 'account:logout' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-secondary">خروج</button>
+</form>
+{% endblock %}
 {% block navright %}
-<h4>جزئیات نوبت</h4>
+<h4>{{ appointment.shop.name }} | تایید نوبت</h4>
 {% endblock %}
 
 {% block content %}
@@ -21,13 +27,21 @@
         
         {% elif appointment.status == 'pending'  and appointment.start_time < now  %}
             <span style="color: gray;">این نوبت منقضی شده است.</span>
-        
+        {% else %}
+            {{ appointment.get_status_display }}
         {% endif %}
     </div>
     
 
 
-    {% if appointment.status == 'pending' and appointment.start_time > now  %}
+    {% if  appointment.status == 'confirmed' and appointment.start_time > now  %}
+    <div class="col-12 mt-3">
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">لغو نوبت</button>
+        </form>
+    </div>
+    {% elif appointment.status == 'pending' and appointment.start_time > now %}
     <div class="col-12 mt-3">
         <form method="post">
             {% csrf_token %}

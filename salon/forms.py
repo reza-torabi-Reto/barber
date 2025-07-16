@@ -4,9 +4,8 @@ from django.forms import modelformset_factory
 from django.utils import timezone  
 from datetime import datetime, timedelta
 from django.db.models import Sum
-from .models import Shop, Service, ShopSchedule, Appointment, AppointmentService,CustomerShop
+from .models import Shop, Service, ShopSchedule, BarberSchedule, Appointment, AppointmentService,CustomerShop
 from account.models import CustomUser, BarberProfile
-
 
 class ShopForm(forms.ModelForm):
     class Meta:
@@ -77,6 +76,34 @@ class ShopScheduleForm(forms.ModelForm):
             'break_end': forms.TimeInput(format='%H:%M', attrs={'type': 'time'}),
         }
 
+
+ShopScheduleFormSet = modelformset_factory(
+    ShopSchedule,
+    form=ShopScheduleForm,
+    fields=('day_of_week', 'is_open', 'start_time', 'end_time', 'break_start', 'break_end'),
+    extra=0
+)
+
+class BarberScheduleForm(forms.ModelForm):
+    class Meta:
+        model = ShopSchedule
+        fields = ('day_of_week', 'is_open', 'start_time', 'end_time', 'break_start', 'break_end')
+        widgets = {
+            'start_time': forms.TimeInput(format='%H:%M', attrs={'type': 'time'}),
+            'end_time': forms.TimeInput(format='%H:%M', attrs={'type': 'time'}),
+            'break_start': forms.TimeInput(format='%H:%M', attrs={'type': 'time'}),
+            'break_end': forms.TimeInput(format='%H:%M', attrs={'type': 'time'}),
+        }
+
+BarberScheduleFormSet = modelformset_factory(
+    BarberSchedule,
+    form=BarberScheduleForm,
+    fields=['day_of_week', 'is_open', 'start_time', 'end_time', 'break_start', 'break_end'],
+    extra=0,
+    can_delete=False
+)
+
+
 class AppointmentForm(forms.ModelForm):
     class Meta:
         model = Appointment
@@ -112,9 +139,4 @@ class AppointmentForm(forms.ModelForm):
 
         return cleaned_data
 
-ShopScheduleFormSet = modelformset_factory(
-    ShopSchedule,
-    form=ShopScheduleForm,
-    fields=('day_of_week', 'is_open', 'start_time', 'end_time', 'break_start', 'break_end'),
-    extra=0
-)
+# from django.forms import modelformset_factory

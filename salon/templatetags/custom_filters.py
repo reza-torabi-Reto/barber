@@ -62,5 +62,4 @@ def make_calendar_weeks(day_list):
     if any(week):
         weeks.append(week)
 
-    # print(f"Weeks: {weeks}")
     return weeks

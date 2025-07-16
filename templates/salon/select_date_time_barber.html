@@ -1,0 +1,142 @@
+<!-- salon/templates/salon/select_date_time.html -->
+{% extends 'base.html' %}
+{% block title %}نوبت آرا | پرونده {{ user.nickname }}{% endblock %}
+{% load custom_filters %}
+{% block mycss %}
+<style>
+    .date-scroll-container {
+        display: flex;
+        overflow-x: auto;
+        padding: 10px 0;
+        gap: 0.5rem;
+        scroll-snap-type: x mandatory;
+    }
+
+    .date-btn {
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+        white-space: nowrap;
+        min-width: 160px;
+        border-radius: 12px;
+    }
+
+    .date-scroll-container::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .date-scroll-container::-webkit-scrollbar-thumb {
+        background: #007bff;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+{% block navleft %}
+<a href="{% url 'salon:book_appointment' shop.id %}" class="btn btn-secondary">بازگشت به مرحله قبل</a>
+<a href="{% url 'account:customer_profile' %}" class="btn btn-secondary">بازگشت به پروفایل</a>
+<form method="post" action="{% url 'account:logout' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-secondary">خروج</button>
+</form>
+{% endblock %}
+{% block navright %}
+<div class="d-flex align-items-baseline justify-content-end">
+    <h4>نوبت آرا | پرونده {{ user.nickname }}</h4>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <h4 class="col mb-4">رزرو نوبت | انتخاب آرایشگر و خدمت</h4>
+    {% if error %}
+    <div class="col">
+        <div class="alert alert-danger">{{ error }}</div>
+    </div>
+    {% endif %}
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <p><strong>آرایشگر:</strong> {{ barber.nickname }}</p>
+    </div>
+    <div class="col-md-6">
+        <p><strong>سرویس‌ها:</strong></p>
+        <p>
+        <ul>
+            {% for service in services %}
+            <li>{{ service.name }} | ({{ service.duration }} دقیقه) - ({{service.price}} تومان)</li>
+            {% endfor %}
+        </ul>
+        </p>
+    </div>
+</div>
+<hr>
+<div class="row">
+    <h4 class="col-12 mb-2">انتخاب روز:</h4>
+    <div class="col-12">
+        {% if dates %}
+        <div class="date-scroll-container">
+            {% for date in dates %}
+            <button type="button" class="btn btn-outline-primary date-btn"
+                onclick="loadTimes('{{ date.gregorian_date|date:'Y-m-d' }}')">
+                {{ date.day_of_week }}<br>{{ date.jalali_date }}
+            </button>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p>هیچ روز آزادی برای رزرو در دسترس نیست.</p>
+        {% endif %}
+    </div>
+</div>
+
+<hr>
+<div class="row">
+    <h4 class="col-12 mt-2">انتخاب زمان:</h4>
+    <div class="col-12">
+        <div id="time-slots" class="time-slot">
+            <p>لطفاً یک روز انتخاب کنید.</p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block myjs %}
+<script>
+    const availableDates = {{ dates|safe }};
+    
+    function loadTimes(date) {
+        const serviceIds = {{ appointment_data.services|safe }};
+        const barberId = {{ appointment_data.barber_id }};
+        const shopId = {{ appointment_data.shop_id }};
+        const serviceParams = serviceIds.map(id => `services=${id}`).join('&');
+
+        fetch(`{% url 'salon:get_available_times' %}?shop_id=${shopId}&barber_id=${barberId}&date=${date}&${serviceParams}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`خطای شبکه: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                const timeSlots = document.getElementById('time-slots');
+                timeSlots.innerHTML = '';
+                
+                if (!data.times || data.times.length === 0) {
+                    timeSlots.innerHTML = '<p class="text-muted">هیچ زمان آزادی برای این روز وجود ندارد.</p>';
+                    return;
+                }
+                
+                data.times.forEach(time => {
+                    const slotLink = document.createElement('a');
+                    slotLink.href = `{% url 'salon:confirm_appointment' %}?date=${date}&time=${time.start_time}`;
+                    slotLink.className = 'btn btn-outline-success m-2';
+                    slotLink.textContent = `${time.start_time} - ${time.end_time}`;
+                    timeSlots.appendChild(slotLink);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                const timeSlots = document.getElementById('time-slots');
+                timeSlots.innerHTML = `<p class="text-danger">خطا در دریافت زمان‌ها: ${error.message}</p>`;
+            });
+    }
+</script>
+{% endblock %}

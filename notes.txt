@@ -18,6 +18,12 @@ API-React Native
 -service edit:   api->ok  /   react->
 -service delete: api->ok  /   react->
 
+//////////////////////////////////////////////////
+
+- set time working for any barber -> ok
+- set time appointment for any barber ->  ok
+- clear code! -> 
+- create barber profile -> 
 
 
 

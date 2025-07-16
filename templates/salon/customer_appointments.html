@@ -45,20 +45,23 @@
                         <td>{{ appointment.end_time|localtime|j_time }}</td>
                         <td>
                             {% if appointment.status == 'pending' %}
-                            {% if appointment.start_time > now %}
-                                در انتظار تایید
-                            {% else %}
-                                منقضی شده
+                                {% if appointment.start_time > now %}
+                                    در انتظار تایید
+                                {% else %}
+                                    منقضی شده
                             {% endif %}
+
                             {% elif appointment.status == 'confirmed' %}
                                 {% if appointment.start_time > now %}
                                     تأیید شده
                                 {% else %}
                                     انجام شده
-                                {% endif %}
+                            
+                                    {% endif %}
                             {% elif appointment.status == 'completed' %}
                                 انجام شد
-                            {% elif appointment.status == 'canceled' %}
+                            
+                                {% elif appointment.status == 'canceled' %}
                                 لغو شده
                             {% endif %}
                         </td>

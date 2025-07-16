@@ -108,7 +108,7 @@ class ManagerProfileEditForm(forms.ModelForm):
     first_name = forms.CharField(max_length=30, label='نام')
     last_name = forms.CharField(max_length=150, label='نام خانوادگی')
     email = forms.EmailField(label='ایمیل', required=False)
-    address = forms.CharField(max_length=255, required=False, label='نشانی')
+    # address = forms.CharField(max_length=255, required=False, label='نشانی')
 
     class Meta:
         model = ManagerProfile
@@ -125,7 +125,7 @@ class ManagerProfileEditForm(forms.ModelForm):
             self.fields['first_name'].initial = user.first_name
             self.fields['last_name'].initial = user.last_name
             self.fields['email'].initial = user.email
-            self.fields['address'].initial = user.address if hasattr(user, 'address') else ''
+            # self.fields['address'].initial = user.address if hasattr(user, 'address') else ''
             self.fields['avatar'].widget.can_delete = False
 
 
@@ -140,8 +140,8 @@ class ManagerProfileEditForm(forms.ModelForm):
         user.first_name = self.cleaned_data['first_name']
         user.last_name = self.cleaned_data['last_name']
         user.email = self.cleaned_data['email']
-        if hasattr(user, 'address'):
-            user.address = self.cleaned_data['address']
+        # if hasattr(user, 'address'):
+        #     user.address = self.cleaned_data['address']
         if commit:
             user.save()
 

@@ -88,6 +88,7 @@ def manage_schedule(request, shop_id):
         return redirect('home')
 
     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
+
     days = [
         'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
     ]
@@ -126,13 +127,78 @@ def manage_schedule(request, shop_id):
     }
 
     # مرتب‌سازی form_schedule_pairs بر اساس ترتیب دلخواه
-    form_schedule_pairs = sorted(form_schedule_pairs, key=lambda x: desired_order[x[1].day_of_week])
-
+    form_schedule_pairs = sorted(
+        form_schedule_pairs, 
+        key=lambda x: desired_order[x[1].day_of_week])
+    
     return render(request, 'salon/manage_schedule.html', {
         'shop': shop,
         'formset': formset,
         'form_schedule_pairs': form_schedule_pairs,
     })
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .models import Shop, BarberSchedule
+from .forms import BarberScheduleFormSet
+from account.models import BarberProfile
+
+from django.db.models import Case, When, Value, IntegerField
+
+@login_required
+def manage_barber_schedule(request, shop_id):
+    if request.user.role != 'manager':
+        return redirect('home')
+
+    shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
+    barbers = BarberProfile.objects.filter(shop=shop)
+    selected_barber_id = request.GET.get('barber')
+
+    if not selected_barber_id:
+        return render(request, 'salon/manage_barber_schedule.html', {
+            'shop': shop,
+            'barbers': barbers,
+            'selected_barber': None
+        })
+
+    selected_barber = get_object_or_404(BarberProfile, id=selected_barber_id, shop=shop)
+
+    days = ['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+
+    for day in days:
+        BarberSchedule.objects.get_or_create(
+            shop=shop,
+            barber=selected_barber,
+            day_of_week=day,
+            defaults={'is_open': False}
+        )
+
+    # استفاده از Case برای ترتیب صحیح در queryset
+    whens = [When(day_of_week=day, then=Value(index)) for index, day in enumerate(days)]
+
+    schedules = BarberSchedule.objects.filter(shop=shop, barber=selected_barber).annotate(
+        sort_order=Case(*whens, output_field=IntegerField())
+    ).order_by('sort_order')
+
+    formset = BarberScheduleFormSet(request.POST or None, queryset=schedules)
+
+    if request.method == 'POST' and formset.is_valid():
+        formset.save()
+        return redirect('salon:manage_shop', shop_id=shop.id)
+        # return redirect(f"{request.path}?barber={selected_barber.id}")
+
+    form_schedule_pairs = list(zip(formset.forms, schedules))
+
+    return render(request, 'salon/manage_barber_schedule.html', {
+        'shop': shop,
+        'barbers': barbers,
+        'selected_barber': selected_barber,
+        'formset': formset,
+        'form_schedule_pairs': form_schedule_pairs,
+    })
+
 
 # ایجاد آرایشگر توسط مدیر
 @login_required
@@ -264,7 +330,7 @@ def manager_appointments(request, shop_id):
     })
 
 
-def manager_appointments_test(request, shop_id):
+def manager_appointments_days(request, shop_id):
     j_date_str = request.GET.get('date')
     status_filter = request.GET.get('status')
 
@@ -305,7 +371,7 @@ def manager_appointments_test(request, shop_id):
 
     }
 
-    return render(request, 'salon/manager_appointments_test.html', context)
+    return render(request, 'salon/manager_appointments_days.html', context)
 
 
 
@@ -438,7 +504,6 @@ def confirm_appointment(request):
         date = datetime.strptime(date_str, '%Y-%m-%d').date()
         time = datetime.strptime(time_str, '%H:%M').time()
         start_time = timezone.make_aware(datetime.combine(date, time))
-        # print(f"time: {start_time}") # output -> "time: 2025-05-22 08:00:00+03:30"
 
     except ValueError:
         return redirect('salon:select_date_time')
@@ -490,7 +555,7 @@ def customer_appointments(request):
         return redirect('home')
     
     appointments = Appointment.objects.filter(customer=request.user).order_by('-start_time')
-    return render(request, 'salon/customer_appointments.html', {'appointments': appointments})
+    return render(request, 'salon/customer_appointments.html', {'appointments': appointments, 'now': timezone.now(),})
 
 def shop_customer_appointments(request, shop_id):
     if request.user.role != 'customer':
@@ -513,8 +578,9 @@ def book_appointment(request, shop_id):
         return redirect('account:customer_profile')
 
     # دریافت آرایشگران فعال آرایشگاه
-    barbers = CustomUser.objects.filter(role='barber',barber_profile__shop=shop,barber_profile__status=True).prefetch_related('barber_profile', 'barber_profile__services')
-    print(f"++Barbers: {barbers}+++")
+    barbers = CustomUser.objects.filter(role='barber',barber_profile__shop=shop,barber_profile__status=True).prefetch_related(
+        'barber_profile', 'barber_profile__services')
+    
     if request.method == 'POST':
         barber_id = request.POST.get('barber_id')
         service_ids = request.POST.getlist('services')  # دریافت لیست خدمات انتخاب‌شده
@@ -543,7 +609,8 @@ def book_appointment(request, shop_id):
             'barber_id': barber.id,
             'services': [str(service.id) for service in services]
         }
-        return redirect('salon:select_date_time')
+        # return redirect('salon:select_date_time')
+        return redirect('salon:select_date_time_barber')
 
     return render(request, 'salon/book_appointment.html', {
         'shop': shop,
@@ -596,7 +663,7 @@ def select_date_time(request):
     today = timezone.now().date()
     jalali_dates = []
 
-    for i in range(8):
+    for i in range(30):
         date = today + timedelta(days=i)
         day_of_week = date.strftime('%A').lower()
         schedule = working_days.get(day_of_week)
@@ -621,17 +688,70 @@ def select_date_time(request):
         'error': 'هیچ روز آزادی برای رزرو در ۸ روز آینده در دسترس نیست.' if not jalali_dates else None,
     })
 
-import logging
-logger = logging.getLogger(__name__)
+
+@login_required
+def select_date_time_barber(request):
+    if request.user.role != 'customer':
+        return redirect('home')
+    
+    appointment_data = request.session.get('appointment_data')
+    if not appointment_data:
+        return redirect('account:customer_profile')
+
+    shop = get_object_or_404(Shop, id=appointment_data['shop_id'])
+    services = Service.objects.filter(id__in=appointment_data['services'], shop=shop)
+    barber = get_object_or_404(CustomUser, id=appointment_data['barber_id'], role='barber', barber_profile__shop=shop)
+
+    total_duration = get_total_service_duration(services)
+    if total_duration == 0:
+        return render(request, 'salon/select_date_time_barber.html', {
+            'shop': shop,
+            'services': services,
+            'barber': barber,
+            'dates': [],
+            'appointment_data': appointment_data,
+            'total_duration': total_duration,
+            'error': 'مدت زمان سرویس‌ها معتبر نیست.'
+        })
+    
+    schedules = BarberSchedule.objects.filter(shop=shop,barber= barber.barber_profile ,is_open=True)
+    
+    working_days = {s.day_of_week: s for s in schedules}
+    today = timezone.now().date()
+    jalali_dates = []
+
+    for i in range(30):
+        date = today + timedelta(days=i)
+        day_of_week = date.strftime('%A').lower()
+        schedule = working_days.get(day_of_week)
+        if not schedule or not schedule.start_time or not schedule.end_time:
+            continue
+
+        available_times = find_available_time_slots(date, schedule, barber, total_duration)
+        
+        if available_times:
+            jalali_dates.append({
+                'gregorian_date': date,
+                'jalali_date': j_convert_appoiment(date),
+                'day_of_week': schedule.get_day_of_week_display(),
+            })
+        
+    return render(request, 'salon/select_date_time_barber.html', {
+        'shop': shop,
+        'barber': barber,
+        'services': services,
+        'total_duration': total_duration,
+        'dates': jalali_dates,
+        'appointment_data': appointment_data,
+        'error': 'هیچ روز آزادی برای رزرو در ۸ روز آینده در دسترس نیست.' if not jalali_dates else None,
+    })
 
 # نمایش ساعت های خالی روزهای هفته در صفحه:(select_date_time) 
 @login_required
 def get_available_times(request):
-    logger.debug(f"Received GET params: {request.GET}")
-    
     if request.user.role != 'customer':
         return redirect('home')
-    
+    # اشکال لود نشدن زمان آزاد
     shop_id = request.GET.get('shop_id')
     barber_id = request.GET.get('barber_id')
     date_str = request.GET.get('date')
@@ -648,13 +768,15 @@ def get_available_times(request):
     except Exception:
         return JsonResponse({'times': []}, status=400)
 
+
     if total_duration == 0:
         return JsonResponse({'times': []}, status=400)
 
     day_of_week = selected_date.strftime('%A').lower()
     try:
-        schedule = ShopSchedule.objects.get(shop_id=shop_id, day_of_week=day_of_week, is_open=True)
-    except ShopSchedule.DoesNotExist:
+        schedule = BarberSchedule.objects.get(shop_id=shop_id,barber=barber.barber_profile ,day_of_week=day_of_week, is_open=True)
+    except BarberSchedule.DoesNotExist:
+        print("Times***")
         return JsonResponse({'times': []})
 
     available_times = find_available_time_slots(selected_date, schedule, barber, total_duration)
@@ -689,7 +811,6 @@ from django.utils.timezone import localtime
 @login_required
 def get_unread_notifications(request):
     notifications = request.user.notifications.filter(is_read=False).order_by('-created_at')
-    print(f"Noti= {notifications}")
     data = []
     for noti in notifications:
         data.append({

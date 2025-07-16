@@ -69,14 +69,17 @@
                     {% else %}
                         منقضی شده
                     {% endif %}
+
                 {% elif appointment.status == 'confirmed' %}
                     {% if appointment.start_time > now %}
                         تأیید شده
                     {% else %}
                         انجام شده
                     {% endif %}
+                
                 {% elif appointment.status == 'completed' %}
                     تکمیل شده
+            
                 {% elif appointment.status == 'canceled' %}
                     لغو شده
                 {% endif %}

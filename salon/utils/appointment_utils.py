@@ -76,8 +76,6 @@ def find_available_time_slots(date, schedule, barber, total_duration): # date=to
 
         if date == now.date() and current_time < future_threshold:
                    current_time += slot_interval
-                #    print(f"date: {date}, current_time: {current_time}, slot_interval: {slot_interval}")
-                #    print("////////////////////////")
                    continue
 
         if is_slot_available(current_time, slot_end, booked_slots, break_start, break_end):
