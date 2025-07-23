@@ -26,7 +26,8 @@
         <p><strong>رایانامه:</strong> {{ user.email|default:"ثبت نشده" }}</p>
         <p>
             <a href="{% url 'account:edit_customer_profile' %}" class="btn btn-primary btn-sm">ویرایش پروفایل</a> 
-            <a href="/account/edit-profile/" class="btn btn-primary btn-sm">بازیابی گذرواژه</a>
+            <br>
+            <a href="{% url 'account:change_password' %}">ویرایش گذرواژه</a>
         </p>
     </div>
 </div>

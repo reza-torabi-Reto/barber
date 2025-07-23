@@ -20,7 +20,12 @@
 {% endblock %}
 
 {% block content %}
+<div>
+    <a href="{% url 'salon:manager_appointments' shop.id %}" class="btn btn-primary">همه نوبت ها ({{all_count}})</a>     
+    <a href="{% url 'salon:manager_appointments' shop.id %}?pending=2" class="btn btn-primary mr-2">نوبت های امروز ({{today_count}})</a>
+    <a href="{% url 'salon:manager_appointments' shop.id %}?pending=1" class="btn btn-primary mr-2">نوبت های تأیید نشده ({{pending_count}})</a>
 
+</div>
 <table class="table table-hover align-middle text-center w-100">
     <thead>
         <tr>

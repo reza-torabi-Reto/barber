@@ -22,6 +22,8 @@ class CustomUser(AbstractUser):
 
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, blank=True, null=True)
     phone = models.CharField(max_length=15, blank=True, null=True)
+    email = models.EmailField(verbose_name='رایانامه',unique=True,blank=True,null=True)
+
 
     property
     def nickname(self):
@@ -38,7 +40,6 @@ class BarberProfile(models.Model):
     shop = models.ForeignKey('salon.Shop', on_delete=models.SET_NULL, null=True, blank=True)
     avatar = models.ImageField(upload_to=get_random_filename, blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
-
     def __str__(self):
         return f"{self.user.first_name} {self.user.last_name}"
 
@@ -46,7 +47,6 @@ class ManagerProfile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='manager_profile')
     avatar = models.ImageField(upload_to=get_random_filename, blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
-
     def get_avatar_url(self):
         """برگرداندن URL آواتار یا آواتار پیش‌فرض"""
         if self.avatar:

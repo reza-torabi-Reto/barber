@@ -1,33 +1,34 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout
 from django.http import JsonResponse
 from django.urls import reverse
-from django.db.models import Sum
+from django.db.models import Sum, Case, When, Value, IntegerField
 from datetime import datetime, timedelta, timezone
 from django.utils import timezone
+from django.utils.timezone import localtime
 from django.contrib import messages
 from django.utils.timesince import timesince
 from django.views.decorators.http import require_POST
 from django.utils.timezone import now
 from django.db.models import Q
 import json
+import jdatetime
 from extensions.utils import j_convert_appoiment
 from account.models import CustomUser, BarberProfile
 from account.forms import BarberSignUpForm
+from .utils.decorators import role_required
 from .utils.appointment_utils  import get_total_service_duration, find_available_time_slots, message_nitif, jalali_str_to_gregorian_date
-from .forms import ShopForm, ServiceForm, ShopScheduleFormSet, AppointmentService, ShopEditForm
-from .models import Shop, Service, CustomerShop, ShopSchedule, Appointment, Notification
-
-# from jalali_date import datetime2jalali, jalali2datetime
+from .forms import ShopForm, ServiceForm, ShopScheduleFormSet, AppointmentService, ShopEditForm, BarberScheduleFormSet
+from .models import Shop, BarberSchedule,Service, CustomerShop, ShopSchedule, Appointment, Notification
 
 
 # ================ Manager Section ================
 # صفحه ایجاد آرایشگاه توسط مدیر
-@login_required
-def create_shop(request):
-    if request.user.role != 'manager':
-        return redirect('home')
 
+@login_required
+@role_required(['manager'])
+def create_shop(request):
     if request.method == 'POST':
         form = ShopForm(request.POST)
         if form.is_valid():
@@ -41,10 +42,9 @@ def create_shop(request):
 
 # صفحه اطلاعات آرایشگاه برای مدیر
 @login_required
+@role_required(['manager'])
 def manage_shop(request, shop_id):
-    if request.user.role != 'manager':
-        return redirect('home')
-
+    
     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
     barbers = CustomUser.objects.filter(role='barber', barber_profile__shop=shop)
     services = Service.objects.filter(shop=shop)
@@ -64,10 +64,8 @@ def manage_shop(request, shop_id):
 
 # ویرایش آرایشگاه توسط مدیر
 @login_required
+@role_required(['manager'])
 def edit_shop(request, shop_id):
-    
-    if request.user.role != 'manager':
-        return redirect('home')
     
     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
 
@@ -83,10 +81,8 @@ def edit_shop(request, shop_id):
 
 # صفحه تعیین روزها/ساعت های کاری توسط مدیر
 @login_required
+@role_required(['manager'])
 def manage_schedule(request, shop_id):
-    if request.user.role != 'manager':
-        return redirect('home')
-
     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
 
     days = [
@@ -139,19 +135,11 @@ def manage_schedule(request, shop_id):
 
 
 
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from .models import Shop, BarberSchedule
-from .forms import BarberScheduleFormSet
-from account.models import BarberProfile
-
-from django.db.models import Case, When, Value, IntegerField
 
 @login_required
+@role_required(['manager'])
 def manage_barber_schedule(request, shop_id):
-    if request.user.role != 'manager':
-        return redirect('home')
-
+    
     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
     barbers = BarberProfile.objects.filter(shop=shop)
     selected_barber_id = request.GET.get('barber')
@@ -202,9 +190,9 @@ def manage_barber_schedule(request, shop_id):
 
 # ایجاد آرایشگر توسط مدیر
 @login_required
+@role_required(['manager'])
 def create_barber(request, shop_id):
-    if request.user.role != 'manager':
-        return redirect('home')
+    
     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
     if request.method == 'POST':
         form = BarberSignUpForm(request.POST) #->, request.FILES
@@ -220,10 +208,9 @@ def create_barber(request, shop_id):
 
 # حذف آرایشگر از آرایشگاه توسط مدیر
 @login_required
+@role_required(['manager'])
 def delete_barber(request, shop_id, barber_id):
-    if request.user.role != 'manager':
-        return redirect('home')
-
+    
     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
     barber = get_object_or_404(CustomUser, id=barber_id, role='barber', barber_profile__shop=shop)
     barber.barber_profile.shop = None
@@ -231,20 +218,19 @@ def delete_barber(request, shop_id, barber_id):
     return redirect('salon:manage_shop', shop_id=shop.id)
 
 # لیست نوبت های یک آرایشگر  توسط مدیر
-@login_required
-def barber_appointments(request):
-    if request.user.role != 'barber':
-        return redirect('home')
+# @login_required
+# def barber_appointments(request):
+#     if request.user.role != 'barber':
+#         return redirect('home')
 
-    appointments = Appointment.objects.filter(barber=request.user).order_by('-start_time')
-    return render(request, 'salon/barber_appointments.html', {'appointments': appointments})
+#     appointments = Appointment.objects.filter(barber=request.user).order_by('-start_time')
+#     return render(request, 'salon/barber_appointments.html', {'appointments': appointments})
 
 # ایجاد خدمت توسط مدیر
 @login_required
+@role_required(['manager'])
 def create_service(request, shop_id):
-    if request.user.role != 'manager':
-        return redirect('home')
-
+    
     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
     # بررسی وجود آرایشگر
     has_barbers = BarberProfile.objects.filter(shop=shop, status=True).exists()
@@ -268,10 +254,9 @@ def create_service(request, shop_id):
 
 # ویرایش خدمت توسط مدیر
 @login_required
+@role_required(['manager'])
 def edit_service(request, shop_id, service_id):
-    if request.user.role != 'manager':
-        return redirect('home')
-
+    
     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
     service = get_object_or_404(Service, id=service_id, shop=shop)
     has_barbers = BarberProfile.objects.filter(shop=shop, status=True).exists()
@@ -297,10 +282,9 @@ def edit_service(request, shop_id, service_id):
 
 # حذف خدمت توسط مدیر
 @login_required
+@role_required(['manager'])
 def delete_service(request, shop_id, service_id):
-    if request.user.role != 'manager':
-        return redirect('home')
-
+    
     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
     service = get_object_or_404(Service, id=service_id, shop=shop)
     service.delete()
@@ -309,28 +293,72 @@ def delete_service(request, shop_id, service_id):
 # نمایش نوبت ها برای مدیر
 
 @login_required
+@role_required(['manager'])
 def manager_appointments(request, shop_id):
-    if request.user.role != 'manager':
-        return redirect('home')
-
+    # pending_count = 0
+    # today_count=0
+    # all_count=0
     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
     base_qs = Appointment.objects.filter(shop=shop)
     pending_only = request.GET.get('pending') 
     if pending_only=='1':
         appointments = base_qs.filter(shop=shop, status='pending').order_by('-start_time') 
+        # pending_count= appointments.count()
     elif pending_only=='2':
         appointments = base_qs.filter(shop=shop, start_time__date=timezone.now().date()).order_by('-start_time') 
+        # today_count= appointments.count()
     else:
         appointments = base_qs.filter(shop=shop).order_by('-start_time') 
+        # all_count= appointments.count()
     
     return render(request, 'salon/manager_appointments.html', {
         'shop': shop,
         'appointments': appointments,
+        'pending_count':base_qs.filter(shop=shop, status='pending').order_by('-start_time').count(),
+        'today_count':base_qs.filter(shop=shop, start_time__date=timezone.now().date()).order_by('-start_time').count(),
+        'all_count':base_qs.filter(shop=shop).order_by('-start_time').count(),
         'now': timezone.now(),
     })
 
 
+
+@login_required
+@role_required(['manager'])
+def manager_appointments(request, shop_id):
+    shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
+    base_qs = Appointment.objects.filter(shop=shop)
+    today = timezone.now().date()
+    pending_only = request.GET.get('pending')
+
+    # فیلتر نمایش اصلی
+    if pending_only == '1':
+        appointments = base_qs.filter(status='pending')
+    elif pending_only == '2':
+        appointments = base_qs.filter(start_time__date=today)
+    else:
+        appointments = base_qs
+
+    appointments = appointments.select_related('barber', 'customer').order_by('-start_time')
+
+    # شمارنده‌ها (همیشه لازمند برای نمایش در UI)
+    counts = {
+        'pending_count': base_qs.filter(status='pending').count(),
+        'today_count': base_qs.filter(start_time__date=today).count(),
+        'all_count': base_qs.count(),
+    }
+
+    return render(request, 'salon/manager_appointments.html', {
+        'shop': shop,
+        'appointments': appointments,
+        **counts,
+        'now': timezone.now(),
+    })
+
+
+@login_required
+@role_required(['manager'])
 def manager_appointments_days(request, shop_id):
+ 
     j_date_str = request.GET.get('date')
     status_filter = request.GET.get('status')
 
@@ -374,14 +402,11 @@ def manager_appointments_days(request, shop_id):
     return render(request, 'salon/manager_appointments_days.html', context)
 
 
-
-
 # تایید یک نوبت توسط مدیر
 @login_required
+@role_required(['manager'])
 def appointment_detail_manager(request, id):
-    if request.user.role != 'manager':
-        return redirect('home')
-
+    
     appointment = get_object_or_404(Appointment, id=id)
 
     if request.method == 'POST':
@@ -417,10 +442,9 @@ def appointment_detail_manager(request, id):
 
 
 @login_required
+@role_required(['manager'])
 def complete_appointment_confirm(request, id):
-    if request.user.role != 'manager':
-        return redirect('home')
-
+    
     appointment = get_object_or_404(Appointment, id=id)
 
     # بررسی وضعیت و زمان نوبت
@@ -452,12 +476,34 @@ def complete_appointment_confirm(request, id):
 
     return render(request, 'salon/complete_appointment_confirm.html', {'appointment': appointment})
 
+@login_required
+@role_required(['barber'])
+def barber_appointments(request, shop_id):
+    
+    # بررسی اینکه این آرایشگر در این فروشگاه فعال هست یا نه
+    barber_profile = get_object_or_404(BarberProfile, user=request.user, shop__id=shop_id)
+    shop = barber_profile.shop
+    base_qs = Appointment.objects.filter(shop=shop, barber=request.user)
+    pending_only = request.GET.get('pending') 
+
+    if pending_only == '1':
+        appointments = base_qs.filter(status='pending').order_by('-start_time')
+    elif pending_only == '2':
+        appointments = base_qs.filter(start_time__date=timezone.now().date()).order_by('-start_time')
+    else:
+        appointments = base_qs.order_by('-start_time')
+    
+    return render(request, 'salon/barber_appointments.html', {
+        'shop': shop,
+        'barber_profile': barber_profile,
+        'appointments': appointments,
+        'now': timezone.now(),
+    })
 
 @login_required
+@role_required(['customer'])
 def appointment_detail_customer(request, id):
-    if request.user.role != 'customer':
-        return redirect('home')
-
+    
     appointment = get_object_or_404(Appointment, id=id, customer=request.user)
 
     if request.method == 'POST':
@@ -487,6 +533,7 @@ def appointment_detail_customer(request, id):
 # ================ Customer Section ================
 # صفحه تایید نوبت توسط مشتری
 @login_required
+@role_required(['customer'])
 def confirm_appointment(request):
     appointment_data = request.session.get('appointment_data')
     if not appointment_data:
@@ -550,16 +597,15 @@ def confirm_appointment(request):
     })
 #نمایش نوبت ها برای مشتری
 @login_required
+@role_required(['customer'])
 def customer_appointments(request):
-    if request.user.role != 'customer':
-        return redirect('home')
     
     appointments = Appointment.objects.filter(customer=request.user).order_by('-start_time')
     return render(request, 'salon/customer_appointments.html', {'appointments': appointments, 'now': timezone.now(),})
 
+@login_required
+@role_required(['customer'])
 def shop_customer_appointments(request, shop_id):
-    if request.user.role != 'customer':
-        return redirect('home')
     
     appointments = Appointment.objects.filter(customer=request.user, shop_id=shop_id).order_by('-start_time')
     
@@ -568,10 +614,9 @@ def shop_customer_appointments(request, shop_id):
 
 # صفحه انتخاب آرایشگر و خدمات توسط مشتری
 @login_required
+@role_required(['customer'])
 def book_appointment(request, shop_id):
-    if request.user.role != 'customer':
-        return redirect('account:customer_profile')
-
+    
     # بررسی عضویت مشتری در آرایشگاه
     shop = get_object_or_404(Shop, id=shop_id)
     if not CustomerShop.objects.filter(customer=request.user, shop=shop, is_active=True).exists():
@@ -633,9 +678,8 @@ def get_shop_details(request):
 
 # صفحه تعیین روز/ساعت نوبت توسط 
 @login_required
+@role_required(['customer'])
 def select_date_time(request):
-    if request.user.role != 'customer':
-        return redirect('home')
     
     appointment_data = request.session.get('appointment_data')
     if not appointment_data:
@@ -690,9 +734,8 @@ def select_date_time(request):
 
 
 @login_required
+@role_required(['customer'])
 def select_date_time_barber(request):
-    if request.user.role != 'customer':
-        return redirect('home')
     
     appointment_data = request.session.get('appointment_data')
     if not appointment_data:
@@ -748,9 +791,9 @@ def select_date_time_barber(request):
 
 # نمایش ساعت های خالی روزهای هفته در صفحه:(select_date_time) 
 @login_required
+@role_required(['customer'])
 def get_available_times(request):
-    if request.user.role != 'customer':
-        return redirect('home')
+    
     # اشکال لود نشدن زمان آزاد
     shop_id = request.GET.get('shop_id')
     barber_id = request.GET.get('barber_id')
@@ -788,6 +831,7 @@ def get_available_times(request):
 
 # صفحه مشخصات آرایشگاه برای مشتری
 @login_required
+@role_required(['customer'])
 def shop_detail(request, shop_id):
 
     shop = get_object_or_404(Shop, id=shop_id)    
@@ -803,8 +847,6 @@ def shop_detail(request, shop_id):
         'barbers': barbers,
     })
 
-import jdatetime
-from django.utils.timezone import localtime
 
 
 
@@ -821,6 +863,7 @@ def get_unread_notifications(request):
         })
 
     return JsonResponse({'notifications': data})
+
 @login_required
 @require_POST
 def mark_as_read(request):

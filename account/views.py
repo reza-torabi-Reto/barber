@@ -1,20 +1,51 @@
 # account/views.py
-from django.shortcuts import render, redirect, get_object_or_404, HttpResponseRedirect
-from django.contrib.auth import login 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login , logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView, PasswordChangeView, PasswordChangeDoneView
 from django.urls import reverse
 import os
 from django.conf import settings
 from django.db.models import Q
 from django.contrib import messages
-from .forms import ManagerSignUpForm, CustomerSignUpForm, BarberProfileForm, ManagerProfileEditForm, CustomerProfileForm
+from django.urls import reverse_lazy
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+from .forms import CustomPasswordChangeForm,ManagerSignUpForm, CustomerSignUpForm, BarberProfileForm, ManagerProfileEditForm, CustomerProfileForm
 from .models import ManagerProfile, BarberProfile
 from salon.models import Shop, CustomerShop
+from salon.utils.decorators import role_required
+
+
+class CustomPasswordChangeView(LoginRequiredMixin, PasswordChangeView):
+    form_class = CustomPasswordChangeForm
+    template_name = 'account/change_password.html'
+    success_url = reverse_lazy('account:change_password_done')
+
+
+
+class CustomPasswordChangeDoneView(LoginRequiredMixin, PasswordChangeDoneView):
+    template_name = 'account/change_password_done.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+
+        if user.role == 'manager':
+            context['home_url'] = reverse('account:profile')
+        elif user.role == 'barber':
+            context['home_url'] = reverse('account:barber_profile')
+        elif user.role == 'customer':
+            context['home_url'] = reverse('account:customer_profile')
+        else:
+            context['home_url'] = reverse('account:home')  # برای احتیاط
+
+        return context
 
 
 def home(request):
     return render(request, 'account/home.html')
+
 # ---------- Login Section
 class CustomLoginView(LoginView):
     template_name = 'account/login.html'
@@ -29,7 +60,7 @@ class CustomLoginView(LoginView):
                 return reverse('account:customer_profile')
             
             elif user.role == 'barber':
-                return reverse('account:barber_profile')  # بعداً می‌تونیم یه صفحه برای آرایشگرها بسازیم
+                return reverse('account:barber_profile')  
         return reverse('account:home')
 
 # ---------- Manager Section
@@ -46,9 +77,8 @@ def manager_signup(request):
 
 
 @login_required
+@role_required(['manager'])
 def profile(request):
-    if request.user.role != 'manager':
-        return redirect('home')
 
     shops = Shop.objects.filter(manager=request.user)
     return render(request, 'account/profile.html', {
@@ -59,10 +89,9 @@ def profile(request):
 
 
 @login_required
+@role_required(['manager'])
 def edit_manager_profile(request):
-    if request.user.role != 'manager':
-        return redirect('home')
-
+    
     profile = request.user.manager_profile
     if request.method == 'POST':
         form = ManagerProfileEditForm(request.POST, request.FILES, instance=profile, user=request.user)
@@ -97,10 +126,9 @@ def edit_manager_profile(request):
 
 # ---------- Section Barber
 @login_required
+@role_required(['barber'])
 def barber_profile(request):
-    if request.user.role != 'barber':
-        return redirect('home')
-
+    
     profile = request.user.barber_profile
     return render(request, 'account/barber_profile.html', {
         'user': request.user,
@@ -108,10 +136,9 @@ def barber_profile(request):
     })
 
 @login_required
+@role_required(['barber'])
 def edit_barber_profile(request):
-    if request.user.role != 'barber':
-        return redirect('home')
-
+    
     profile = request.user.barber_profile
     if request.method == 'POST':
         form = BarberProfileForm(request.POST, request.FILES, instance=profile)
@@ -127,9 +154,9 @@ def edit_barber_profile(request):
 
 
 @login_required
+@role_required(['manager'])
 def toggle_barber_status(request, barber_id, shop_id):
-    if request.user.role != 'manager':
-        return redirect('home')
+    
     barber = get_object_or_404(BarberProfile, user_id=barber_id, shop__manager=request.user)
 
     barber.status = not barber.status
@@ -151,10 +178,9 @@ def customer_signup(request):
 
 
 @login_required
+@role_required(['customer'])
 def customer_profile(request):
-    if request.user.role != 'customer':
-        return redirect('home')
-
+    
     customer_shops = CustomerShop.objects.filter(customer=request.user)
     customer_shop_ids = [cs.shop.id for cs in customer_shops]
 
@@ -176,10 +202,9 @@ def customer_profile(request):
 
 
 @login_required
+@role_required(['customer'])
 def edit_customer_profile(request):
-    if request.user.role != 'customer':
-        return redirect('home')
-
+    
     profile = request.user.customer_profile
     if request.method == 'POST':
         form = CustomerProfileForm(request.POST, instance=profile)
@@ -195,10 +220,9 @@ def edit_customer_profile(request):
 
 
 @login_required
+@role_required(['manager'])
 def customer_list(request, shop_id):
-    if request.user.role != 'manager':
-        return redirect('home')
-
+    
     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
     customer_shops = CustomerShop.objects.filter(shop=shop).select_related('customer')
 
@@ -220,10 +244,9 @@ def customer_list(request, shop_id):
     })
 
 @login_required
+@role_required(['manager'])
 def toggle_customer_status(request, customer_id, shop_id):
-    if request.user.role != 'manager':
-        return redirect('home')
-
+    
     # پیدا کردن CustomerShop
     customer_shop = get_object_or_404(CustomerShop, customer_id=customer_id, shop_id=shop_id)
 
@@ -250,20 +273,18 @@ def toggle_customer_status(request, customer_id, shop_id):
     return redirect(url)
 
 @login_required
+@role_required(['customer'])
 def join_shop(request, shop_id):
-    if request.user.role != 'customer':
-        return redirect('home')
-
+    
     shop = get_object_or_404(Shop, id=shop_id)
     if not CustomerShop.objects.filter(customer=request.user, shop=shop).exists():
         CustomerShop.objects.create(customer=request.user, shop=shop)
     return redirect('account:customer_profile')
 
 @login_required
+@role_required(['customer'])
 def leave_shop(request, shop_id):
-    if request.user.role != 'customer':
-        return redirect('home')
-
+    
     shop = get_object_or_404(Shop, id=shop_id)
     CustomerShop.objects.filter(customer=request.user, shop=shop).delete()
     return redirect('account:customer_profile')

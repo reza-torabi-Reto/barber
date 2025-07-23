@@ -22,35 +22,17 @@ API-React Native
 
 - set time working for any barber -> ok
 - set time appointment for any barber ->  ok
-- clear code! -> 
-- create barber profile -> 
+- clear code! -> ok
+- create barber profile -> ok
 
+- change password -> ok
+- recovery password ->
 
+- notification by sms ->
+- notification by email
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+- sending email ->
+- sending sms ->
 
 
 
