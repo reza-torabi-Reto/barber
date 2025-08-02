@@ -1,0 +1,92 @@
+<!-- salon/create_barber.html -->
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block title %}پروفایل{% endblock %}
+
+{% block navleft %}
+<a href="{% url 'account:profile' %}" class="btn btn_nav">پروفایل</a>
+<a href="{% url 'salon:manage_shop' shop.id %}" class="btn btn_nav">مدیریت</a>
+{% endblock %}
+{% block navright %}
+<h1>آرایشگر من</h1>
+{% endblock %}
+
+{% block content %}
+<!-- نمایش خطاهای فرم -->
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow rounded-4">
+            <div class="card-body p-4">
+                <h5 class="mb-4 text-center">ایجاد آرایشگر</h5>
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    <ul>
+                        {% for field in form %}
+                        {% for error in field.errors %}
+                        <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+
+
+                    {% if not already_is_barber %}
+                    <div class="form-group d-flex justify-content-first">
+                        <input type="checkbox" name="is_self" id="id_is_self" style="width: 20px;margin-left: 5px">
+                        <label for="id_is_self" style="font-size: 14px;color: green;">من خودم می‌خواهم آرایشگر این
+                            آرایشگاه باشم.</label>
+                    </div>
+                    {% endif %}
+
+                    <div id="phone-field">
+                        <div class="form-group mb-3">
+                            <label for="id_password1">شماره تماس:</label>
+                            <input type="text" class="form-control" name="phone" maxlength="15" id="id_phone">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="id_first_name">نام:</label>
+                            <input type="text" class="form-control" name="first_name" maxlength="150"
+                                id="id_first_name">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="id_last_name">نام خانوادگی:</label>
+                            <input type="text" class="form-control" name="last_name" maxlength="150" id="id_last_name">
+                        </div>
+                    </div>
+                    <div class="form-group mb-3 text-left">
+                        <button type="submit" class="btn btn-primary">ثبت آرایشگر</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block myjs %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const isSelfCheckbox = document.getElementById("id_is_self");
+        const phoneField = document.getElementById("phone-field");
+
+        function togglePhoneField() {
+            if (isSelfCheckbox.checked) {
+                phoneField.style.display = "none";
+            } else {
+                phoneField.style.display = "block";
+            }
+        }
+
+        isSelfCheckbox.addEventListener("change", togglePhoneField);
+        togglePhoneField(); // initial call
+    });
+</script>
+
+{% endblock %}

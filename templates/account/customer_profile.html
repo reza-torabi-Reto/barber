@@ -1,96 +1,99 @@
 <!-- account/templates/account/customer_profile.html -->
 {% extends 'base.html' %}
-{% block title %}نوبت آرا | پرونده {{ user.nickname }}{% endblock %}
+{% load static %}
 {% load custom_filters %}
-
+{% block title %}نوبت آرا | پرونده {{ user.nickname }}{% endblock %}
 {% block navleft %}
-<form method="post" action="{% url 'account:logout' %}">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-secondary">خروج</button>
-</form>
+
 {% endblock %}
 {% block navright %}
 <div class="d-flex align-items-baseline justify-content-end">
-    <h4>نوبت آرا | پرونده {{ user.nickname }}</h4>
+    <h1>آرایشگر من</h1>
 </div>
 {% endblock %}
 
 {% block content %}
 
-<div class="row">
-    <div class="col">
-        <p><strong>نام کاربری:</strong> {{ user.username }}</p>
-        <p><strong>نام: </strong>{{ user.first_name }}</p>
-        <p><strong>نام خانوادگی: </strong>{{ user.last_name }}</p>
-        <p><strong>شماره تلفن: </strong>{{ user.phone|default:"ثبت نشده" }}</p> 
-        <p><strong>رایانامه:</strong> {{ user.email|default:"ثبت نشده" }}</p>
-        <p>
-            <a href="{% url 'account:edit_customer_profile' %}" class="btn btn-primary btn-sm">ویرایش پروفایل</a> 
-            <br>
-            <a href="{% url 'account:change_password' %}">ویرایش گذرواژه</a>
-        </p>
-    </div>
-</div>
-<hr>
-<div class="row">
+<div class="row justify-content-center mb-4">
     <div class="col-md-6">
-        <h4>آرایشگاه‌های شما</h4>
-    </div>
-    <div class="col-md-6 text-left">
-        <a href="{% url 'salon:customer_appointments' %}"  class="btn btn-info ">نمایش نوبت ها</a>
-    </div>
-</div>
-<div class="row">
-    <div class="col mt-2">
-        {% if customer_shops %}
-            <ul class="list-group mb-2 pr-0">
-            {% for customer_shop in customer_shops %}
-                <li class="list-group-item">
-                    <div class="row">
-                        <div class="col-md-6">
-                        {{ customer_shop.shop.name }} (کد: {{ customer_shop.shop.referral_code }}) - عضویت از: {{ customer_shop.joined_at|j_date }}
+        <div class="card shadow rounded-4">
+            <div class="card-body p-4">
+                <h5 class="mb-4 text-center">پروفایل کاربری</h5>
+                <div class="profile_manager_name text-center mb-2">
+                    {{ user.nickname }}
+                </div>
+                <div class="profile_manager_info">
+                    <label for="" class="text-center">نقش:</label>
+                    {{ user.get_role_display }}
+                </div>
+                <div class="profile_manager_info">
+                    <label for="" class="text-center">نام کاربری:</label>
+                    {{ user.username }}
+                </div>
+                <div class="profile_manager_info">
+                    <label for="id-email" class="text-center">رایانامه:</label>
+                    {{ user.email|default:"ثبت نشده" }}
+                </div>
+                <div class="profile_manager_info">
+                    <label for="" class="text-center">شماره تلفن:</label>
+                    {{ user.phone|default:"ثبت نشده" }}
+                </div>
+                <div class="text-center">
+                    <a href="{% url 'account:edit_customer_profile' %}" class="btn custom-btn w-100 mt-2">ویرایش
+                        پروفایل</a>
+                </div>
+                <hr>
+                <h5 class="mb-4 text-center">آراشگاه های من</h5>
+                {% if customer_shops %}
+                <ul class="list-group mb-2 pr-0">
+                    {% for customer_shop in customer_shops %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-center mb-2">
+                            {{ customer_shop.shop.name }}
+                             (کد: {{ customer_shop.shop.referral_code }}) - عضویت از:
                         </div>
-                        <div class="col-md-6 text-left">
+                        <div class="d-flex justify-content-between">
                             <a href="{% url 'salon:shop_detail' customer_shop.shop.id %}" class="btn btn-info btn-sm">مشخصات</a>
-                            <a href="{% url 'salon:book_appointment' customer_shop.shop.id %}" class="btn btn-primary btn-sm">رزرو نوبت</a>
-                            <a href="{% url 'account:leave_shop' customer_shop.shop.id %}" class="btn btn-danger btn-sm">لغو عضویت</a>
+                        <a href="{% url 'salon:book_appointment' customer_shop.shop.id %}" class="btn btn-primary btn-sm">رزرو نوبت</a>
+                        <a href="{% url 'account:leave_shop' customer_shop.shop.id %}" class="btn btn-danger btn-sm">لغو عضویت</a>
                         </div>
-                    </div>            
-                </li>
-            {% endfor %}
-            </ul>
-            {% else %}
-                <p>شما هنوز عضو هیچ آرایشگاهی نشده‌اید.</p>
-            {% endif %}
-    </div>
-</div>
-<hr>
-<div class="row">
-<div class="col d-flex align-items-center">
-    <label for="id_phone" class="ml-2">جستجوی آرایشگاه:</label>
-    <form method="get" action="{% url 'account:customer_profile' %}" class="d-flex">
-        <input type="text" name="search" value="{{ search_query }}" placeholder="نام یا کد آرایشگاه را وارد کنید" class="form-control" style="width: 600px; max-width: 600px; border-left: none; border-radius: 0px .25rem .25rem 0px;">
-        <button type="submit" class="btn btn-secondary" style="border-right: none; border-radius: .25rem 0px 0px .25rem;">جستجو</button>
-    </form>
-</div>
-</div>
-    {% if search_results %}
-        <h5>نتایج جستجو:</h5>
-        <ul class="list-group">
-        {% for shop in search_results %}
-            <li class="list-group-item">
-                {{ shop.name }} (کد: {{ shop.referral_code }})
-                {% if shop.id in customer_shop_ids %}
-                    <span>(شما عضو هستید)</span>
+                    </li>
+                    {% endfor %}
+                </ul>
                 {% else %}
-                    <a href="{% url 'account:join_shop' shop.id %}" class="btn btn-success btn-sm">عضویت</a>
+                <p>شما هنوز آرایشگاهی ثبت نکرده‌اید.</p>
                 {% endif %}
-            </li>
-        {% endfor %}
-        </ul>
-    {% elif search_query %}
-        <p>آرایشگاهی با این مشخصات پیدا نشد.</p>
-    {% endif %}
-
+                <div class="text-center">
+                    <a href="{% url 'salon:customer_appointments' %}" class="btn custom-btn w-100 ">نمایش نوبت ها</a>
+                </div>
+                <hr>
+                <div class="search_shops">
+                    <form method="get"  action="{% url 'account:customer_profile' %}" class="d-flex align-items-center">
+                        <input type="text" name="search" value="{{ search_query }}" placeholder="نام یا کد آرایشگاه را وارد کنید" class="form-control">
+                        <button type="submit" class="btn btn-primary btn-sm ms-3" >جستجو</button>
+                    </form>
+                </div>
+                <div>
+                    {% if search_results %}
+                    <h5>نتایج جستجو:</h5>
+                    <ul class="list-group">
+                        {% for shop in search_results %}
+                        <li class="list-group-item">
+                            {{ shop.name }} (کد: {{ shop.referral_code }})
+                            {% if shop.id in customer_shop_ids %}
+                            <span>(شما عضو هستید)</span>
+                            {% else %}
+                            <a href="{% url 'account:join_shop' shop.id %}" class="btn btn-success btn-sm">عضویت</a>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% elif search_query %}
+                    <p>آرایشگاهی با این مشخصات پیدا نشد.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
-    {% endblock %}
+</div>
+{% endblock %}

@@ -6,7 +6,7 @@ app_name = 'salon'
 
 urlpatterns = [
     path('create/', views.create_shop, name='create_shop'),
-    path('create-barber/<int:shop_id>/', views.create_barber, name='create_barber'),
+    # path('create-barber/<int:shop_id>/', views.create_barber, name='create_barber'),
     path('create-service/<int:shop_id>/', views.create_service, name='create_service'),
     
     path('shop-manage/<int:shop_id>/', views.manage_shop, name='manage_shop'),
@@ -23,7 +23,7 @@ urlpatterns = [
     path('<int:shop_id>/customer-appointments/', views.shop_customer_appointments, name='shop_customer_appointments'),
     path('<int:shop_id>/barber-appointments/', views.barber_appointments, name='barber_appointments'),
     path('<int:shop_id>/book-appointment/', views.book_appointment, name='book_appointment'),
-    path('select-date-time/', views.select_date_time, name='select_date_time'),
+    # path('select-date-time/', views.select_date_time, name='select_date_time'),
     path('select-date-time-barber/', views.select_date_time_barber, name='select_date_time_barber'),
     path('get-available-times/', views.get_available_times, name='get_available_times'),
     path('confirm-appointment/', views.confirm_appointment, name='confirm_appointment'),

@@ -1,104 +1,110 @@
-<!-- templates/salon/customer_appointments.html -->
-{% extends 'base.html' %}
-{% block title %}نوبت آرا | نوبت های  {{ user.nickname }}{% endblock %}
-{% load tz %}
 
+<!-- templates/salon/customer_appointments.html -->
+
+{% extends 'base.html' %}
 {% load custom_filters %}
+{% load static %}
+{% load tz %}
+{% block title %}نوبت ها{% endblock %}
 {% block navleft %}
-<a href="{% url 'account:customer_profile' %}" class="btn btn-secondary">بازگشت به پروفایل</a>
-<form method="post" action="{% url 'account:logout' %}">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-secondary">خروج</button>
-</form>
+<a href="{% url 'account:customer_profile' %}" class="btn btn_nav">پروفایل</a>
 {% endblock %}
+
 {% block navright %}
 <div class="d-flex align-items-baseline justify-content-end">
-    <h4>نوبت آرا | نوبت‌های {{ user.nickname }}</h4>
+    <h1>آرایشگر من</h1>
 </div>
 {% endblock %}
-{% block content %}
-    <h5>نوبت‌های من:</h5>
-    {% if appointments %}
-        <table class="w-100">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>آرایشگاه</th>
-                    <th>سرویس</th>
-                    <th>آرایشگر</th>
-                    <th>تاریخ</th>
-                    <th>زمان شروع</th>
-                    <th>زمان پایان</th>
-                    <th>وضعیت</th>
-                    <th>عملیات</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for appointment in appointments %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td> 
-                        <td>{{ appointment.shop.name }}</td>
-                        <td>{{ appointment|get_services }}</td>
-                        <td>{{ appointment.barber.nickname }}</td>
-                        <td>{{ appointment.start_time|j_date }}</td>
-                        <td>{{ appointment.start_time|localtime|j_time }}</td>
-                        <td>{{ appointment.end_time|localtime|j_time }}</td>
-                        <td>
-                            {% if appointment.status == 'pending' %}
-                                {% if appointment.start_time > now %}
-                                    در انتظار تایید
-                                {% else %}
-                                    منقضی شده
-                            {% endif %}
 
-                            {% elif appointment.status == 'confirmed' %}
-                                {% if appointment.start_time > now %}
-                                    تأیید شده
-                                {% else %}
-                                    انجام شده
-                            
-                                    {% endif %}
-                            {% elif appointment.status == 'completed' %}
-                                انجام شد
-                            
-                                {% elif appointment.status == 'canceled' %}
-                                لغو شده
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if appointment.status == 'pending' %}
-                                {% if appointment.start_time > now %}
-                                    <a href="{% url 'salon:appointment_detail_customer' appointment.id %}" class="text-info text-decoration-none">
-                                        <i class="bi bi-check-circle"></i> لغو
-                                    </a>
-                                {% else %}
-                                    <a href="{% url 'salon:appointment_detail_customer' appointment.id %}" class="text-info text-decoration-none">
-                                        <i class="bi bi-info-circle"></i> جزییات
-                                    </a>
-                                {% endif %}
-                            {% elif appointment.status == 'confirmed' %}
-                                {% if appointment.start_time > now %}
-                                    <a href="{% url 'salon:appointment_detail_customer' appointment.id %}" class="text-danger text-decoration-none">
-                                        <i class="bi bi-x-circle"></i> لغو نوبت
-                                    </a>
-                                {% endif %}
-                            {% elif appointment.status == 'completed' %}
-                                <a href="{% url 'salon:appointment_detail_customer' appointment.id %}" class="text-info text-decoration-none">
-                                    <span class="text-success">
-                                        <i class="bi bi-check2-circle"></i> جزئیات
-                                    </span>
-                                </a>
-                            {% elif appointment.status == 'canceled' %}
-                                <a href="{% url 'salon:appointment_detail_customer' appointment.id %}" class="text-info text-decoration-none">
-                                    <i class="bi bi-info-circle"></i> جزئیات
-                                </a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>شما هیچ نوبت فعالی ندارید.</p>
-    {% endif %}
-    {% endblock %}
+{% block content %}
+
+<h5>نوبت‌های من:</h5>
+{% if appointments %}
+<table class="table table-hover align-middle text-center w-100">
+    <thead>
+        <tr>
+            <th></th>
+            <th>آرایشگاه</th>
+            <th>سرویس</th>
+            <th>آرایشگر</th>
+            <th>تاریخ</th>
+            <th>زمان شروع</th>
+            <th>زمان پایان</th>
+            <th>وضعیت</th>
+            <th>عملیات</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for appointment in appointments %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ appointment.shop.name }}</td>
+            <td>{{ appointment|get_services }}</td>
+            <td>{{ appointment.barber.nickname }}</td>
+            <td>{{ appointment.start_time|j_date }}</td>
+            <td>{{ appointment.start_time|localtime|j_time }}</td>
+            <td>{{ appointment.end_time|localtime|j_time }}</td>
+            <td>
+                {% if appointment.status == 'pending' %}
+                {% if appointment.start_time > now %}
+                در انتظار تایید
+                {% else %}
+                منقضی شده
+                {% endif %}
+
+                {% elif appointment.status == 'confirmed' %}
+                {% if appointment.start_time > now %}
+                تأیید شده
+                {% else %}
+                انجام شده
+
+                {% endif %}
+                {% elif appointment.status == 'completed' %}
+                انجام شد
+
+                {% elif appointment.status == 'canceled' %}
+                لغو شده
+                {% endif %}
+            </td>
+            <td>
+                {% if appointment.status == 'pending' %}
+                {% if appointment.start_time > now %}
+                <a href="{% url 'salon:appointment_detail_customer' appointment.id %}"
+                    class="text-info text-decoration-none">
+                    <i class="bi bi-check-circle"></i> لغو
+                </a>
+                {% else %}
+                <a href="{% url 'salon:appointment_detail_customer' appointment.id %}"
+                    class="text-info text-decoration-none">
+                    <i class="bi bi-info-circle"></i> جزییات
+                </a>
+                {% endif %}
+                {% elif appointment.status == 'confirmed' %}
+                {% if appointment.start_time > now %}
+                <a href="{% url 'salon:appointment_detail_customer' appointment.id %}"
+                    class="text-danger text-decoration-none">
+                    <i class="bi bi-x-circle"></i> لغو نوبت
+                </a>
+                {% endif %}
+                {% elif appointment.status == 'completed' %}
+                <a href="{% url 'salon:appointment_detail_customer' appointment.id %}"
+                    class="text-info text-decoration-none">
+                    <span class="text-success">
+                        <i class="bi bi-check2-circle"></i> جزئیات
+                    </span>
+                </a>
+                {% elif appointment.status == 'canceled' %}
+                <a href="{% url 'salon:appointment_detail_customer' appointment.id %}"
+                    class="text-info text-decoration-none">
+                    <i class="bi bi-info-circle"></i> جزئیات
+                </a>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>شما هیچ نوبت فعالی ندارید.</p>
+{% endif %}
+{% endblock %}

@@ -3,14 +3,14 @@ from django.contrib.auth.admin import UserAdmin
 from .models import CustomUser, ManagerProfile, BarberProfile, CustomerProfile
 
 class CustomUserAdmin(UserAdmin):
-    list_display = ('username', 'role', 'phone', 'email', 'is_staff')
+    list_display = ('username', 'role', 'phone', 'email', 'is_staff', 'must_change_password')
     list_filter = ('role', 'is_staff')
     search_fields = ('username', 'phone', 'email')
     ordering = ('username',)
 
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
-        ('اطلاعات شخصی', {'fields': ('first_name', 'last_name', 'email', 'phone')}),
+        ('اطلاعات شخصی', {'fields': ('first_name', 'last_name', 'email', 'phone', 'must_change_password')}),
         ('نقش و دسترسی‌ها', {'fields': ('role', 'is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('تاریخ‌ها', {'fields': ('last_login', 'date_joined')}),
     )

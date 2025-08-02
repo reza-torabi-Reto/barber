@@ -1,28 +1,36 @@
 <!-- account/templates/account/login.html -->
-{% extends 'base.html' %}
-{% block title %}پروفایل{% endblock %}
+{% extends 'base_index.html' %}
+{% block title %} | ورود{% endblock %}
 {% block content %}
-<div class="my_login m-auto" style="max-width: 400px;">
-  <h4 class="mb-4">ورود به سیستم</h4>
-  <form method="post">
-    {% csrf_token %}
-    <p>
-      <label for="id_username">نام کاربری:</label>
-      <input type="text" class="form-control" name="username" autofocus="" autocapitalize="none" autocomplete="username"
-        maxlength="150" required="" id="id_username">
-    </p>
-    <p>
-      <label for="id_password">گذرواژه:</label>
-      <input type="password" class="form-control" name="password" autocomplete="current-password" required=""
-        id="id_password">
-    </p>
-    <button type="submit" class="btn btn-primary">ورود</button>
-  </form>
-  <p>
-    <a href="{% url 'account:password_reset' %}" class="text-decoration-none">
-      گذرواژه را فراموش کرده‌اید؟
-    </a>
-  </p>
-  <p>حساب ندارید؟ <a href="{% url 'account:manager_signup' %}">ثبت‌نام کنید</a></p>
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card shadow rounded-4">
+      <div class="card-body p-4">
+        <h5 class="mb-4 text-center">ورود به سیستم</h5>
+        <form method="post">
+          {% csrf_token %}
+          <div class="form-group mb-3">
+            <label for="id_username">نام کاربری:</label>
+            <input type="text" class="form-control" name="username" autofocus="" autocapitalize="none"
+              autocomplete="username" maxlength="150" required="" id="id_username">
+          </div>
+          <div class="form-group mb-3">
+            <label for="id_password">گذرواژه:</label>
+            <input type="password" class="form-control" name="password" autocomplete="current-password" required=""
+              id="id_password">
+          </div>
+          <div class="form-group mb-3 text-left">
+          <button type="submit" class="btn btn-primary">ورود</button>
+          </div>
+        </form>
+        <p>
+          <a href="{% url 'account:password_reset' %}" class="text-decoration-none">
+            گذرواژه را فراموش کرده‌اید؟
+          </a>
+        </p>
+        <p>حساب ندارید؟ <a href="{% url 'home' %}">ثبت‌نام کنید</a></p>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

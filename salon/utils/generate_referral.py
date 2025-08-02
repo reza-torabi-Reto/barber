@@ -8,3 +8,4 @@ def generate_referral_code(length=8):
         code = ''.join(random.choice(characters) for _ in range(length))
         if not Shop.objects.filter(referral_code=code).exists():  # چک کردن تکراری نبودن
             return code
+

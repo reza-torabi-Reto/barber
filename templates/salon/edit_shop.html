@@ -1,9 +1,11 @@
 <!-- salon/edit_shop.html -->
 {% extends 'base.html' %}
 {% load custom_filters %}
+{% block title %}پروفایل{% endblock %}
+
 {% block mycss %}
 <style>
-    select{
+    select {
         color: #495057;
         background-color: #fff;
         background-clip: padding-box;
@@ -13,51 +15,50 @@
     }
 </style>
 {% endblock %}
-{% block title %}پروفایل{% endblock %}
 {% block navleft %}
-<a href="{% url 'salon:manage_shop' shop.id %}" class="btn btn-secondary">بازگشت به مدیریت</a>
-<form method="post" action="{% url 'account:logout' %}">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-secondary">خروج</button>
-</form>
+<a href="{% url 'account:profile' %}" class="btn btn_nav">پروفایل</a>
+<a href="{% url 'salon:manage_shop' shop.id %}" class="btn btn_nav">مدیریت</a>
 {% endblock %}
+
 {% block navright %}
-<h4>{{ shop.name }} | ویرایش اطلاعات</h4>
+<h1>آرایشگر من</h1>
 {% endblock %}
 
 {% block content %}
-    <form method="post">
-        {% csrf_token %}
-        <div class="row">
-            <div class="col-md-6">
-                <p>
-                    <label for="id_name">نام آرایشگاه:</label>
-                    <input type="text" class="form-control" name="name" value="پیرایش منصوری" maxlength="100" required="" id="id_name">
-                </p>
-            </div>
-            <div class="col-md-6">
-                <p>
-                    <label for="id_phone">شماره تماس:</label>
-                    <input type="text" class="form-control"  name="phone" value="333" maxlength="15" required="" id="id_phone">
-                </p>
+<!-- نمایش خطاهای فرم -->
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow rounded-4">
+            <div class="card-body p-4">
+                <h5 class="mb-4 text-center">ویرایش مدیریت</h5>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group mb-3">
+                        <label for="id_name">نام آرایشگاه:</label>
+                        <input type="text" class="form-control" name="name" value="پیرایش منصوری"
+                            maxlength="100" required="" id="id_name">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="id_phone">شماره تماس:</label>
+                        <input type="text" class="form-control" name="phone" value="333" maxlength="15"
+                            required="" id="id_phone">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="id_address">آدرس دقیق:</label>
+                        <textarea name="address" class="form-control" cols="40" rows="10" required=""
+                            id="id_address">st yas</textarea>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="id_address" class="d-inline-block">وضعیت:</label>
+                        {{form.status}}
+                    </div>
+                    <div class="form-group text-left">
+                        <button type="submit" class="btn custom-btn">ذخیره تغییرات</button>
+                    </div>
+                </form>
             </div>
         </div>
-        <div class="row">
-            <div class="col">
-                <p>
-                    <label for="id_address">آدرس دقیق:</label>
-                    <textarea name="address" class="form-control"  cols="40" rows="10" required="" id="id_address">st yas</textarea>
-                </p>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-6">
-                <label for="id_address" class="d-inline-block">وضعیت:</label>
-                {{form.status}}
-            </div>
-            <div class="col-md-6 text-left">
-            <button type="submit">ذخیره تغییرات</button>
-            </div>
-        </div>
-    </form>
+    </div>
+</div>
 {% endblock %}
+

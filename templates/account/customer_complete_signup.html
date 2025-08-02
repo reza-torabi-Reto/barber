@@ -1,0 +1,65 @@
+{% extends "base_index.html" %}
+{% block title %}نام نویسی مدیر{% endblock %}
+{% block navbar %} <h1 class="text-center">نام نویسی مشتری</h1> {% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+      <div class="card shadow rounded-4">
+          <div class="card-body p-4">
+              
+              <form method="post" novalidate>
+                  {% csrf_token %}
+                  <!-- نام -->
+                  <div class="form-group mb-3">
+                      <label for="id_first_name">نام</label>
+                      <input type="text" name="first_name"
+                          class="form-control{% if form.first_name.errors %} is-invalid{% endif %}" id="id_first_name"
+                          value="{{ form.first_name.value|default_if_none:'' }}" required>
+                      {% for error in form.first_name.errors %}
+                      <div class="invalid-feedback">{{ error }}</div>
+                      {% endfor %}
+                  </div>
+                  <!-- نام خانوادگی -->
+                  <div class="form-group mb-3">
+                    <label for="id_last_name">نام خانوادگی</label>
+                    <input type="text" name="last_name"
+                        class="form-control{% if form.last_name.errors %} is-invalid{% endif %}" id="id_last_name"
+                        value="{{ form.last_name.value|default_if_none:'' }}" required>
+                    {% for error in form.last_name.errors %}
+                    <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                  <!-- رمز عبور -->
+                  <div class="form-group mb-3">
+                      <label for="id_password1">گذرواژه</label>
+                      <input type="password" name="password1"
+                          class="form-control{% if form.password1.errors %} is-invalid{% endif %}" id="id_password1"
+                          required>
+                      {% for error in form.password1.errors %}
+                      <div class="invalid-feedback">{{ error }}</div>
+                      {% endfor %}
+                  </div>
+
+                  <!-- تکرار رمز عبور -->
+                  <div class="form-group mb-4">
+                      <label for="id_password2">بازنویسی گذرواژه</label>
+                      <input type="password" name="password2"
+                          class="form-control{% if form.password2.errors %} is-invalid{% endif %}" id="id_password2"
+                          required>
+                      {% for error in form.password2.errors %}
+                      <div class="invalid-feedback">{{ error }}</div>
+                      {% endfor %}
+                  </div>
+
+                  <!-- دکمه ثبت -->
+                  <button type="submit" class="btn btn-primary w-100">تکمیل نام نویسی</button>
+              </form>
+              <br>
+              <p>قبلاً ثبت‌نام کرده‌اید؟ <a href="{% url 'login' %}">وارد شوید</a></p>
+          </div>
+      </div>
+  </div>
+</div>
+
+{% endblock %}

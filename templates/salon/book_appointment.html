@@ -1,242 +1,237 @@
 <!-- salon/templates/salon/book_appointment.html -->
 {% extends 'base.html' %}
-{% block title %}نوبت آرا | پرونده {{ user.nickname }}{% endblock %}
+{% load static %}
 {% load custom_filters %}
-
+{% block title %}نوبت آرا | پرونده {{ user.nickname }}{% endblock %}
 {% block navleft %}
-<a href="{% url 'account:customer_profile' %}" class="btn btn-secondary">بازگشت به پروفایل</a>
-<form method="post" action="{% url 'account:logout' %}">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-secondary">خروج</button>
-</form>
+<a href="{% url 'account:customer_profile' %}" class="btn btn_nav">پروفایل</a>
 {% endblock %}
 {% block navright %}
 <div class="d-flex align-items-baseline justify-content-end">
-    <h4>نوبت آرا | پرونده {{ user.nickname }}</h4>
+    <h1>آرایشگر من</h1>
 </div>
 {% endblock %}
 
 {% block mycss%}
-    <style>
-        .funkyradio div {
-  clear: both;
-  overflow: hidden;
-}
+<style>
+  .funkyradio div {
+    clear: both;
+    overflow: hidden;
+  }
 
-.funkyradio label {
-  width: 100%;
-  border-radius: 3px;
-  border: 1px solid #D1D3D4;
-  font-weight: normal;
-}
-.funkyradio input[type="radio"]{
-  width: auto;
-}
-.funkyradio input[type="radio"]:empty,
-.funkyradio input[type="checkbox"]:empty {
-  display: none;
-}
+  .funkyradio label {
+    width: 100%;
+    border-radius: 3px;
+    border: 1px solid #D1D3D4;
+    font-weight: normal;
+  }
 
-.funkyradio input[type="radio"]:empty ~ label,
-.funkyradio input[type="checkbox"]:empty ~ label {
-  position: relative;
-  line-height: 2.5em;
-  text-indent: 3.25em;
-  margin-top: 2em;
-  cursor: pointer;
-  -webkit-user-select: none;
-     -moz-user-select: none;
-      -ms-user-select: none;
-          user-select: none;
-}
+  .funkyradio input[type="radio"] {
+    width: auto;
+  }
 
-.funkyradio input[type="radio"]:empty ~ label:before,
-.funkyradio input[type="checkbox"]:empty ~ label:before {
-  position: absolute;
-  display: block;
-  top: 0;
-  bottom: 0;
-  right: 0;
-  content: '';
-  width: 2.5em;
-  background: #D1D3D4;
-  border-radius: 0px 3px 3px 0px;
-}
+  .funkyradio input[type="radio"]:empty,
+  .funkyradio input[type="checkbox"]:empty {
+    display: none;
+  }
 
-.funkyradio input[type="radio"]:hover:not(:checked) ~ label,
-.funkyradio input[type="checkbox"]:hover:not(:checked) ~ label {
-  color: #888;
-}
+  .funkyradio input[type="radio"]:empty~label,
+  .funkyradio input[type="checkbox"]:empty~label {
+    position: relative;
+    line-height: 2.5em;
+    text-indent: 3.25em;
+    margin-top: 2em;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
 
-.funkyradio input[type="radio"]:hover:not(:checked) ~ label:before,
-.funkyradio input[type="checkbox"]:hover:not(:checked) ~ label:before {
-  content: '\2714';
-  text-indent: .9em;
-  color: #C2C2C2;
-}
+  .funkyradio input[type="radio"]:empty~label:before,
+  .funkyradio input[type="checkbox"]:empty~label:before {
+    position: absolute;
+    display: block;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    content: '';
+    width: 2.5em;
+    background: #D1D3D4;
+    border-radius: 0px 3px 3px 0px;
+  }
 
-.funkyradio input[type="radio"]:checked ~ label,
-.funkyradio input[type="checkbox"]:checked ~ label {
-  color: #1ab870;
-}
+  .funkyradio input[type="radio"]:hover:not(:checked)~label,
+  .funkyradio input[type="checkbox"]:hover:not(:checked)~label {
+    color: #888;
+  }
 
-.funkyradio input[type="radio"]:checked ~ label:before,
-.funkyradio input[type="checkbox"]:checked ~ label:before {
-  content: '\2714';
-  text-indent: .9em;
-  color: #333;
-  background-color: #ccc;
-}
+  .funkyradio input[type="radio"]:hover:not(:checked)~label:before,
+  .funkyradio input[type="checkbox"]:hover:not(:checked)~label:before {
+    content: '\2714';
+    text-indent: .9em;
+    color: #C2C2C2;
+  }
 
-.funkyradio input[type="radio"]:focus ~ label:before,
-.funkyradio input[type="checkbox"]:focus ~ label:before {
-  box-shadow: 0 0 0 3px #999;
-}
+  .funkyradio input[type="radio"]:checked~label,
+  .funkyradio input[type="checkbox"]:checked~label {
+    color: #1ab870;
+  }
 
-.funkyradio-default input[type="radio"]:checked ~ label:before,
-.funkyradio-default input[type="checkbox"]:checked ~ label:before {
-  color: #fff;
-  background-color: #1ab870;
-}
+  .funkyradio input[type="radio"]:checked~label:before,
+  .funkyradio input[type="checkbox"]:checked~label:before {
+    content: '\2714';
+    text-indent: .9em;
+    color: #333;
+    background-color: #ccc;
+  }
 
-.funkyradio-primary input[type="radio"]:checked ~ label:before,
-.funkyradio-primary input[type="checkbox"]:checked ~ label:before {
-  color: #fff;
-  background-color: #337ab7;
-}
+  .funkyradio input[type="radio"]:focus~label:before,
+  .funkyradio input[type="checkbox"]:focus~label:before {
+    box-shadow: 0 0 0 3px #999;
+  }
 
-.funkyradio-success input[type="radio"]:checked ~ label:before,
-.funkyradio-success input[type="checkbox"]:checked ~ label:before {
-  color: #1ab870;
-  background-color: #1ab870;
-}
+  .funkyradio-default input[type="radio"]:checked~label:before,
+  .funkyradio-default input[type="checkbox"]:checked~label:before {
+    color: #fff;
+    background-color: #1ab870;
+  }
 
-.funkyradio-danger input[type="radio"]:checked ~ label:before,
-.funkyradio-danger input[type="checkbox"]:checked ~ label:before {
-  color: #fff;
-  background-color: #d9534f;
-}
+  .funkyradio-primary input[type="radio"]:checked~label:before,
+  .funkyradio-primary input[type="checkbox"]:checked~label:before {
+    color: #fff;
+    background-color: #337ab7;
+  }
 
-.funkyradio-warning input[type="radio"]:checked ~ label:before,
-.funkyradio-warning input[type="checkbox"]:checked ~ label:before {
-  color: #fff;
-  background-color: #f0ad4e;
-}
+  .funkyradio-success input[type="radio"]:checked~label:before,
+  .funkyradio-success input[type="checkbox"]:checked~label:before {
+    color: #1ab870;
+    background-color: #1ab870;
+  }
 
-.funkyradio-info input[type="radio"]:checked ~ label:before,
-.funkyradio-info input[type="checkbox"]:checked ~ label:before {
-  color: #fff;
-  background-color: #5bc0de;
-}
-    </style>
+  .funkyradio-danger input[type="radio"]:checked~label:before,
+  .funkyradio-danger input[type="checkbox"]:checked~label:before {
+    color: #fff;
+    background-color: #d9534f;
+  }
+
+  .funkyradio-warning input[type="radio"]:checked~label:before,
+  .funkyradio-warning input[type="checkbox"]:checked~label:before {
+    color: #fff;
+    background-color: #f0ad4e;
+  }
+
+  .funkyradio-info input[type="radio"]:checked~label:before,
+  .funkyradio-info input[type="checkbox"]:checked~label:before {
+    color: #fff;
+    background-color: #5bc0de;
+  }
+</style>
 {% endblock %}
+
 {% block content %}
-<div class="row">
-    <h4 class="col mb-4">رزرو نوبت | انتخاب آرایشگر و خدمت</h4>
-    {% if error %}
-    <div class="col">
-        <div class="alert alert-danger">{{ error }}</div>
-    </div>
-    {% endif %}
-</div>
-<div class="row">
-  <div class="col">
-    <form method="post" id="appointment-form">
-      {% csrf_token %}
-      <div class="row">
-          {% for barber in barbers %}
-              <div class="col-md-6 mb-4">
-                  <div class="card h-100">
-                      <div class="card-header funkyradio p-0">
-                          <div class="form-check funkyradio-default p-0">
-                              <input class="form-check-input barber-radio" type="radio" 
-                                     name="barber_id" value="{{ barber.id }}" 
-                                     id="barber_{{ barber.id }}" required
-                                     onchange="toggleServices({{ barber.id }})">
-                              <label class="form-check-label m-0" for="barber_{{ barber.id }}">
-                                  {{ barber.nickname }}
-                              </label>
-                          </div>
-                      </div>
-                      <div class="card-body">
-                          <h5 class="card-title">خدمات</h5>
-                          <div class="services-list funkyradio" id="services_{{ barber.id }}" style="display: none;">
-                              {% for service in barber.barber_profile.services.all %}
-                                  <div class="funkyradio-default">
-                                      <input class="service-checkbox" 
-                                             type="checkbox" 
-                                             name="services" 
-                                             value="{{ service.id }}"
-                                             data-price="{{ service.price }}"
-                                             data-duration="{{ service.duration }}"
-                                             id="service_{{ service.id }}"
-                                             onchange="updateTotals()">
-                                             <label class="m-0 mb-2" for="service_{{ service.id }}">
-                                                 {{ service.name }} ({{ service.price }} تومان، {{ service.duration }} دقیقه)
-                                             </label>
-                                  </div>
-                              {% empty %}
-                                  <p>هیچ خدمتی برای این آرایشگر ثبت نشده است.</p>
-                              {% endfor %}
-                          </div>
-                      </div>
+
+
+<div class="row justify-content-center mb-4">
+  <div class="col-md-6">
+      <div class="shadow rounded-4 p-4">
+          <h5 class="mb-4 text-center">انتخاب آرایشگر و خدمت</h5>
+          {% if error %}
+          <div class="col">
+            <div class="alert alert-danger">{{ error }}</div>
+          </div>
+          {% endif %}
+          <form method="post" id="appointment-form">
+            {% csrf_token %}
+            {% for barber in barbers %}
+            <div class="card mb-4">
+              <div class="card-header funkyradio p-0">
+                <div class="form-check funkyradio-default p-0">
+                  <input class="form-check-input barber-radio" type="radio" name="barber_id" value="{{ barber.id }}"
+                    id="barber_{{ barber.id }}" required onchange="toggleServices({{ barber.id }})">
+                  <label class="form-check-label m-0" for="barber_{{ barber.id }}">
+                    {{ barber.nickname }}
+                  </label>
+                </div>
+              </div>
+              <div class="card-body">
+                <h5 class="card-title">خدمات</h5>
+                <div class="services-list funkyradio" id="services_{{ barber.id }}" style="display: none;">
+                  {% for service in barber.barber_profile.services.all %}
+                  <div class="funkyradio-default">
+                    <input class="service-checkbox" type="checkbox" name="services" value="{{ service.id }}"
+                      data-price="{{ service.price }}" data-duration="{{ service.duration }}"
+                      id="service_{{ service.id }}" onchange="updateTotals()">
+                    <label class="m-0 mb-2" for="service_{{ service.id }}">
+                      {{ service.name }} ({{ service.price }} تومان، {{ service.duration }} دقیقه)
+                    </label>
                   </div>
+                  {% empty %}
+                  <p>هیچ خدمتی برای این آرایشگر ثبت نشده است.</p>
+                  {% endfor %}
+                </div>
               </div>
-          {% empty %}
+            </div>  
+            {% empty %}
+            <p>هیچ خدمتی برای این آرایشگر ثبت نشده است.</p>
+            {% endfor %}
+            <hr>  
+            <div class="row">
               <div class="col-12">
-                  <p class="text-muted">هیچ آرایشگر فعالی در این آرایشگاه یافت نشد.</p>
+                <h5 class="text-center">جمع کل</h5>
+                <div class="profile_manager_info">
+                  <label for="" class="text-center">قیمت کل:</label>
+                  <span id="total-price">0</span> تومان
               </div>
-          {% endfor %}
+              <div class="profile_manager_info">
+                <label for="" class="text-center">مدت زمان کل:</label>
+                <span id="total-duration">0</span> دقیقه
+              </div>
+              </div>
+              <div class="col-12 text-left">
+                <button type="submit" class="btn btn-primary mt-3">مرحله بعد</button>
+              </div>
+            </div>
+          </form>        
       </div>
-      <div class="row">
-        <div class="col-md-6">
-          <h4>جمع کل:</h4>
-          <p>قیمت کل: <span id="total-price">0</span> تومان</p>
-          <p>مدت زمان کل: <span id="total-duration">0</span> دقیقه</p>
-        </div>
-        <div class="col-md-6 text-left">
-          <button type="submit" class="btn btn-primary mt-3">مرحله بعد</button>
-        </div>        
-      </div>
-  </form>  
   </div>
 </div>
 
 <script>
-function toggleServices(barberId) {
+  function toggleServices(barberId) {
     // مخفی کردن همه لیست‌های خدمات
     document.querySelectorAll('.services-list').forEach(list => {
-        list.style.display = 'none';
+      list.style.display = 'none';
     });
-    
+
     // نمایش لیست خدمات آرایشگر انتخاب‌شده
     const servicesList = document.getElementById(`services_${barberId}`);
     if (servicesList) {
-        servicesList.style.display = 'block';
+      servicesList.style.display = 'block';
     }
 
     // ریست کردن چک‌باکس‌های خدمات آرایشگران دیگر
     document.querySelectorAll('.service-checkbox').forEach(checkbox => {
-        checkbox.checked = false;
+      checkbox.checked = false;
     });
 
     // به‌روزرسانی جمع کل
     updateTotals();
-}
+  }
 
-function updateTotals() {
+  function updateTotals() {
     let totalPrice = 0;
     let totalDuration = 0;
 
     // جمع‌آوری خدمات انتخاب‌شده
     document.querySelectorAll('.service-checkbox:checked').forEach(checkbox => {
-        totalPrice += parseFloat(checkbox.dataset.price);
-        totalDuration += parseInt(checkbox.dataset.duration);
+      totalPrice += parseFloat(checkbox.dataset.price);
+      totalDuration += parseInt(checkbox.dataset.duration);
     });
 
     // نمایش مقادیر
     document.getElementById('total-price').textContent = totalPrice.toLocaleString('fa-IR');
     document.getElementById('total-duration').textContent = totalDuration.toLocaleString('fa-IR');
-}
+  }
 </script>
 {% endblock %}

@@ -40,7 +40,7 @@ class ServiceForm(forms.ModelForm):
     def __init__(self, *args, shop=None, **kwargs):
         super().__init__(*args, **kwargs)
         if shop:
-            barbers = BarberProfile.objects.filter(shop=shop, status=True)
+            barbers = BarberProfile.objects.filter(shop=shop, status=True, user__must_change_password= False)
             self.fields['barber'].queryset = barbers
             # حذف گزینه خالی
             self.fields['barber'].empty_label = None

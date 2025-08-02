@@ -3,83 +3,106 @@
 {% block title %}نوبت آرا | ویرایش پرونده {{ user.nickname }}{% endblock %}
 
 {% block navleft %}
-<a href="{% url 'account:profile' %}" class="btn btn-secondary">بازگشت به پروفایل</a>
-<form method="post" action="{% url 'account:logout' %}">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-secondary">خروج</button>
-</form>
+<a href="{% url 'account:profile' %}" class="btn btn_nav">پروفایل</a>
 {% endblock %}
 {% block navright %}
 <div class="d-flex align-items-baseline justify-content-end">
-    <h4>نوبت آرا | ویرایش پرونده {{ user.nickname }}</h4>
+    <h1>آرایشگر من</h1>
 </div>
 {% endblock %}
 
 {% block content %}
-    {% if messages %}
-        <ul class="messages">
-            {% for message in messages %}
-                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-    
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="id_first_name">نام</label>
-                    <input type="text" class="form-control" name="first_name" value="مهران" maxlength="30" required="" id="id_first_name">        
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="id_last_name">نام خانوادگی</label>
-                    <input type="text" class="form-control" name="last_name" value="مدیری" maxlength="150" required="" id="id_last_name">
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="id_email">رایانامه</label>
-                    <input type="email" class="form-control" name="email" maxlength="320" id="id_email">
-                </div>
-            </div>
-            <!-- <div class="col-md-6">
-                <div class="form-group">
-                    <label for="id_address">نشانی</label>
-                    <input type="text" class="form-control" name="address" maxlength="255" id="id_address">
-                </div>
-            </div> -->
-        </div>
-        <div class="row">
-            <div class="col-md-3">
-                <div class="form-group">
-                    <label for="id_avatar">فرتور</label>
-                    {% if form.instance.avatar %}
-                        <p><img src="{{ form.instance.get_avatar_url }}" alt="آواتار فعلی" style="max-width: 100px;"></p>
-                    {% else %}
-                    <p><img src="{% static 'images/default_avatar.png' %}" alt="آواتار پیشفرض" style="max-width: 100px;"></p>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow rounded-4">
+            <div class="card-body p-4">
+                <h5 class="mb-4 text-center">ویرایش پرونده</h5>
+                {% if show_success_message %}    
+                    <div class="alert-success p-4 rounded">
+                        پروفایل با موفقیت به‌روزرسانی شد.
+                    </div>
+                {% endif %}
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <ul>
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <li>{{ field }}: {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                        </ul>
+                    </div>
                     {% endif %}
-                </div>
-                <div class="from-group">
-                    <input type="file" name="avatar" accept="image/png,image/jpeg" id="id_avatar">
-                </div>
-            </div>
-            <div class="col-md-3">
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="id_bio">درباره من</label>
-                    <textarea name="bio" class="form-control" cols="40" rows="4" id="id_bio"></textarea>
-                </div>
+                    <div class="form-group">
+                        <label for="id_username">نام کاربری</label>
+                        <input type="text" class="form-control" name="username" maxlength="30" required id="id_username"
+                            value="{{ form.username.value|default:'' }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_avatar">فرتور</label>
+                        <div class="d-flex justify-content-first">
+                            <div class="avatar-container">
+                                {% if form.instance.avatar %}
+                                <img src="{{ form.instance.get_avatar_url }}" alt="آواتار فعلی" class="avatar-preview">
+                                {% else %}
+                                <img src="{% static 'images/default_avatar.png' %}" alt="آواتار پیشفرض"
+                                    class="avatar-preview">
+                                {% endif %}
+                                <div class="file-input-wrapper">
+                                    <input type="file" name="avatar" accept="image/png,image/jpeg" id="id_avatar">
+                                    <div class="custom-file-btn">انتخاب فایل جدید</div>
+                                    <span class="file-name" id="file-name">فایلی انتخاب نشده</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_first_name">نام</label>
+                        <input type="text" class="form-control" name="first_name" maxlength="30" required
+                            id="id_first_name" value="{{ form.first_name.value|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="id_last_name">نام خانوادگی</label>
+                        <input type="text" class="form-control" name="last_name" maxlength="150" required
+                            id="id_last_name" value="{{ form.last_name.value|default:'' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="id_email">رایانامه</label>
+                        <input type="email" class="form-control" name="email" maxlength="320" id="id_email"
+                            value="{{ form.email.value|default:'' }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_phone">شماره همراه</label>
+                        <input type="text" class="form-control" name="phone" maxlength="30" required id="id_phone"
+                            value="{{ form.phone.value|default:'' }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_bio">درباره من</label>
+                        <textarea name="bio" class="form-control" cols="40" rows="4"
+                            id="id_bio">{{ form.bio.value|default:'' }}</textarea>
+                    </div>
+                    <div class="form-group d-flex justify-content-between">
+                        <a href="{% url 'account:change_password' %}">ویرایش گذرواژه</a>
+                        <button type="submit" class="btn custom-btn">ذخیره تغییرات</button>
+                    </div>
+                </form>
             </div>
         </div>
-        <div class="row">
-            <div class="col text-left">
-                <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
-            </div>
-        </div>
-    {% endblock %}
+    </div>
+</div>
+{% endblock %}
+{% block myjs %}
+<script>
+    document.getElementById('id_avatar').addEventListener('change', function (e) {
+        const fileName = e.target.files.length
+            ? e.target.files[0].name
+            : 'فایلی انتخاب نشده';
+        document.getElementById('file-name').textContent = fileName;
+    });
+</script>
+{% endblock %}

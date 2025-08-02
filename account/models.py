@@ -22,7 +22,10 @@ class CustomUser(AbstractUser):
 
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, blank=True, null=True)
     phone = models.CharField(max_length=15, blank=True, null=True)
-    email = models.EmailField(verbose_name='رایانامه',unique=True,blank=True,null=True)
+    email = models.EmailField(verbose_name='رایانامه',blank=True,null=True)
+    must_change_password = models.BooleanField(default=False) 
+
+    # email = models.EmailField(verbose_name='رایانامه',unique=True,blank=True,null=True)
 
 
     property
@@ -34,14 +37,29 @@ class CustomUser(AbstractUser):
         verbose_name_plural = 'کاربران'
 
 
+
+class BarberProfileManager(models.Manager):
+    def active(self):
+        return self.select_related('user').filter(user__must_change_password=False)
+
 class BarberProfile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='barber_profile')
     status = models.BooleanField(default=True, verbose_name='وضعیت')
     shop = models.ForeignKey('salon.Shop', on_delete=models.SET_NULL, null=True, blank=True)
     avatar = models.ImageField(upload_to=get_random_filename, blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
+
+    objects = BarberProfileManager()  # ✅ این خط ضروریه
+    
+    def get_avatar_url(self):
+        """برگرداندن URL آواتار یا آواتار پیش‌فرض"""
+        if self.avatar:
+            return self.avatar.url
+
     def __str__(self):
         return f"{self.user.first_name} {self.user.last_name}"
+
+
 
 class ManagerProfile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='manager_profile')

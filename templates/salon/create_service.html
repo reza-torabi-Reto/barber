@@ -3,83 +3,84 @@
 {% block title %}ایجاد خدمت{% endblock %}
 
 {% block navleft %}
-<a href="{% url 'salon:manage_shop' shop.id %}" class="btn btn-secondary">بازگشت به مدیریت</a>
-<form method="post" action="{% url 'account:logout' %}">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-secondary">خروج</button>
-</form>
+<a href="{% url 'account:profile' %}" class="btn btn_nav">پروفایل</a>
+<a href="{% url 'salon:manage_shop' shop.id %}" class="btn btn_nav">مدیریت</a>
 {% endblock %}
 {% block navright %}
-<h4>{{ shop.name }} | ایجاد خدمت جدید</h4>
+<h1>آرایشگر من</h1>
 {% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    {% if not has_barbers %}
-        <div class="alert alert-warning">
-            هیچ آرایشگر فعالی برای این آرایشگاه وجود ندارد. لطفاً ابتدا یک آرایشگر اضافه کنید.
-            <a href="{% url 'salon:create_barber' shop.id %}" class="btn btn-primary btn-sm">افزودن آرایشگر</a>
-        </div>
-    {% endif %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow rounded-4">
+            <div class="card-body p-4">
+                <h5 class="mb-4 text-center">ایجاد خدمت</h5>
+                {% if not has_barbers %}
+                <div class="alert alert-warning">
+                    هیچ آرایشگر فعالی برای این آرایشگاه وجود ندارد. لطفاً ابتدا یک آرایشگر اضافه کنید.
+                    <a href="{% url 'salon:create_barber' shop.id %}" class="btn btn-primary btn-sm">افزودن آرایشگر</a>
+                </div>
+                {% endif %}
 
-    {% if form.errors %}
-        <div class="alert alert-danger">
-            <ul>
-                {% for field in form %}
-                    {% for error in field.errors %}
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    <ul>
+                        {% for field in form %}
+                        {% for error in field.errors %}
                         <li>{{ field.label }}: {{ error }}</li>
-                    {% endfor %}
-                {% endfor %}
-                {% for error in form.non_field_errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-    {% endif %}
-
-    <form method="post">
-        {% csrf_token %}
-        <div class="row">
-            <div class="col-md-6">
-                <p>
-                    <label for="id_name">{{ form.name.label }}:</label>
-                    <input type="text" class="form-control" name="name" id="id_name" value="{{ form.name.value|default:'' }}" required>
-                </p>
-            </div>
-            <div class="col-md-6">
-                <p>
-                    <label for="id_price">{{ form.price.label }}:</label>
-                    <input type="number" class="form-control" name="price" id="id_price" value="{{ form.price.value|default:'' }}" required>
-                </p>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-6">
-                <p>
-                    <label for="id_duration">{{ form.duration.label }}:</label>
-                    <input type="number" class="form-control" name="duration" id="id_duration" value="{{ form.duration.value|default:'' }}" required>
-                </p>
-            </div>
-            <div class="col-md-6">
-                <p>
-                    <label for="id_barber">{{ form.barber.label }}:</label>
-                    <select class="form-control" name="barber" id="id_barber" required>
-                        {% for barber in form.barber.field.queryset %}
-                            <option value="{{ barber.id }}" {% if form.barber.value == barber.id %}selected{% endif %}>
-                                {{ barber.user.nickname }}
-                            </option>
-                        {% empty %}
-                            <option value="" disabled selected>هیچ آرایشگری در دسترس نیست</option>
                         {% endfor %}
-                    </select>
-                </p>
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="form-group mb-3">
+                        <label for="id_barber">{{ form.barber.label }}:</label>
+                        <select class="form-control" name="barber" id="id_barber" required>
+                            {% for barber in form.barber.field.queryset %}
+                            <option value="{{ barber.id }}" {% if form.barber.value|stringformat:"s" == barber.id|stringformat:"s" %}selected{% endif %}>
+                                {{ barber.user.nickname }}
+                                {% if barber.user.role == 'manager' %}
+                                (مدیر)
+                                {% endif %}
+
+                            </option>
+
+                            {% empty %}
+                            <option value="" disabled selected>هیچ آرایشگری در دسترس نیست</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="id_name">{{ form.name.label }}:</label>
+                        <input type="text" class="form-control" name="name" id="id_name"
+                            value="{{ form.name.value|default:'' }}" required>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="id_price">{{ form.price.label }}:</label>
+                        <input type="number" class="form-control" name="price" id="id_price"
+                            value="{{ form.price.value|default:'' }}" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="id_duration">{{ form.duration.label }}:</label>
+                        <input type="number" class="form-control" name="duration" id="id_duration"
+                            value="{{ form.duration.value|default:'' }}" required>
+                    </div>
+                    <div class="form-group mb-3 text-left">
+                        <button type="submit" class="btn btn-primary" {% if not has_barbers %}disabled{% endif %}>ثبت
+                            خدمت</button>
+                    </div>
+                </form>
+
             </div>
         </div>
-        <div class="row">
-            <div class="col text-left">
-                <button type="submit" class="btn btn-primary" {% if not has_barbers %}disabled{% endif %}>ثبت خدمت</button>
-            </div>
-        </div>
-    </form>
+    </div>
 </div>
 {% endblock %}

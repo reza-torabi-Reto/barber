@@ -30,7 +30,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.0.2.2']
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
-LOGIN_URL = 'account:login'
+LOGIN_URL = 'login'
 AUTH_USER_MODEL = 'account.CustomUser'
 # Application definition
 

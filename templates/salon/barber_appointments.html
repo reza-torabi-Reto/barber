@@ -6,17 +6,16 @@
 {% block mycss%}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 {% endblock %}
-{% block title %}پروفایل{% endblock %}
+{% block title %}نوبت ها{% endblock %}
 
 {% block navleft %}
-<a href="{% url 'account:barber_profile' %}" class="btn btn-secondary">بازگشت به مدیریت</a>
-<form method="post" action="{% url 'account:logout' %}">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-secondary">خروج</button>
-</form>
+<a href="{% url 'account:barber_profile' %}" class="btn btn_nav">پروفایل</a>
 {% endblock %}
+
 {% block navright %}
-<h4>{{ shop.name }} | فهرست نوبت ها</h4>
+<div class="d-flex align-items-baseline justify-content-end">
+    <h1>آرایشگر من</h1>
+</div>
 {% endblock %}
 
 {% block content %}

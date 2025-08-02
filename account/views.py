@@ -2,7 +2,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login , logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import LoginView, PasswordChangeView, PasswordChangeDoneView
+from django.contrib.auth.views import LoginView, PasswordChangeView, PasswordChangeDoneView, PasswordResetView
 from django.urls import reverse
 import os
 from django.conf import settings
@@ -10,18 +10,21 @@ from django.db.models import Q
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
+import random
+from django.contrib.auth import get_user_model
+from django.contrib.auth import update_session_auth_hash
 
-from .forms import CustomPasswordChangeForm,ManagerSignUpForm, CustomerSignUpForm, BarberProfileForm, ManagerProfileEditForm, CustomerProfileForm
-from .models import ManagerProfile, BarberProfile
+from .forms import *
+from .models import *
 from salon.models import Shop, CustomerShop
 from salon.utils.decorators import role_required
+from salon.utils.invitations import invite_or_reinvite_barber
 
-
+#Views
 class CustomPasswordChangeView(LoginRequiredMixin, PasswordChangeView):
     form_class = CustomPasswordChangeForm
     template_name = 'account/change_password.html'
     success_url = reverse_lazy('account:change_password_done')
-
 
 
 class CustomPasswordChangeDoneView(LoginRequiredMixin, PasswordChangeDoneView):
@@ -43,8 +46,32 @@ class CustomPasswordChangeDoneView(LoginRequiredMixin, PasswordChangeDoneView):
         return context
 
 
+class CustomPasswordResetView(PasswordResetView):
+    form_class = CustomPasswordResetForm
+    template_name = 'account/password_reset_form.html'
+    email_template_name = 'account/password_reset_email.html'
+    subject_template_name = 'account/password_reset_subject.txt'
+    success_url = 'done/'
+#-------------------------------------------------
 def home(request):
     return render(request, 'account/home.html')
+
+def force_password_change(request):
+    if not request.user.must_change_password:
+        return redirect('account:home')
+
+    if request.method == 'POST':
+        form = ForcePasswordChangeForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            form.save()
+            request.user.must_change_password = False
+            request.user.save()
+            update_session_auth_hash(request, request.user)
+            messages.success(request, "رمز شما با موفقیت تغییر یافت.")
+            return redirect('account:barber_profile')  # یا مسیر متناسب با نقش
+    else:
+        form = ForcePasswordChangeForm(user=request.user)
+    return render(request, 'account/force_password_change.html', {'form': form})
 
 # ---------- Login Section
 class CustomLoginView(LoginView):
@@ -52,6 +79,9 @@ class CustomLoginView(LoginView):
     
     def get_success_url(self):
         user = self.request.user
+        if user.must_change_password:
+            return reverse('account:force_password_change')  # 👈 ریدایرکت به صفحه تغییر رمز
+        
         if user.is_authenticated:
             if user.role == 'manager':
                 return reverse('account:profile')
@@ -63,19 +93,75 @@ class CustomLoginView(LoginView):
                 return reverse('account:barber_profile')  
         return reverse('account:home')
 
-# ---------- Manager Section
-def manager_signup(request):
+
+
+
+# ---------- Manager ------------
+# ذخیره OTP موقتی در session (یا میتونی در DB ذخیره کنی)
+def send_otp_code(phone, request):
+    otp = str(random.randint(100000, 999999))
+    print(f"OTP for {phone}: {otp}")  # برای تست در لاگ
+    request.session['otp_code'] = otp
+    request.session['otp_phone'] = phone
+    return otp
+
+def manager_signup_phone(request):
     if request.method == 'POST':
-        form = ManagerSignUpForm(request.POST, request.FILES)
+        form = SignUpPhoneForm(request.POST)
         if form.is_valid():
-            user = form.save()
+            phone = form.cleaned_data['phone']
+            if CustomUser.objects.filter(username=phone).exists():
+                messages.error(request, 'کاربری با این شماره قبلاً ثبت‌نام کرده است.')
+                return redirect('account:manager_signup_phone')
+            send_otp_code(phone, request)
+            return redirect('account:manager_verify_otp')
+    else:
+        form = SignUpPhoneForm()
+    return render(request, 'account/manager_signup_phone.html', {'form': form})
+
+# تایید کد otp
+def manager_verify_otp(request):
+    if request.method == 'POST':
+        form = SignUpOTPForm(request.POST)
+        if form.is_valid():
+            otp_code = form.cleaned_data['otp_code']
+            if otp_code == request.session.get('otp_code'):
+                # OTP صحیح است
+                request.session['otp_verified'] = True
+                return redirect('account:manager_complete_signup')
+            else:
+                messages.error(request, 'کد تایید نادرست است.')
+    else:
+        form = SignUpOTPForm()
+    return render(request, 'account/manager_verify_otp.html', {'form': form})
+
+# فرم تکمیل ثبت نام
+def manager_complete_signup(request):
+    if not request.session.get('otp_verified'):
+        return redirect('account:manager_signup_phone')
+
+    phone = request.session.get('otp_phone')
+    if request.method == 'POST':
+        form = ManagerCompleteSignupForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.role = 'manager'
+            user.phone = phone
+            user.username = phone  # یا هر سیاست دلخواه برای username
+            user.save()
+            ManagerProfile.objects.create(user=user)
             login(request, user)
+            # پاک کردن session های مربوط به otp
+            request.session.pop('otp_code', None)
+            request.session.pop('otp_phone', None)
+            request.session.pop('otp_verified', None)
             return redirect('account:profile')
     else:
-        form = ManagerSignUpForm()
-    return render(request, 'account/manager_signup.html', {'form': form})
+        form = ManagerCompleteSignupForm()
+    return render(request, 'account/manager_complete_signup.html', {'form': form})
 
 
+# پروفایل مدیر
 @login_required
 @role_required(['manager'])
 def profile(request):
@@ -86,8 +172,7 @@ def profile(request):
         'user': request.user,
         'profile': request.user.manager_profile,
     })
-
-
+# ویرایش مدیر
 @login_required
 @role_required(['manager'])
 def edit_manager_profile(request):
@@ -114,8 +199,13 @@ def edit_manager_profile(request):
                         print(f"Error deleting old avatar: {e}")
             # ذخیره فرم
             form.save()
-            messages.success(request, 'پروفایل با موفقیت به‌روزرسانی شد.')
-            return redirect('account:profile')
+            form = ManagerProfileEditForm(instance=profile, user=request.user)
+            
+            # رندر همان صفحه با فرم جدید و پیام
+            return render(request, 'account/edit_manager_profile.html', {
+                'form': form,
+                'show_success_message': True  # پرچم برای نمایش پیام
+            })
     else:
         form = ManagerProfileEditForm(instance=profile, user=request.user)
 
@@ -123,8 +213,52 @@ def edit_manager_profile(request):
         'form': form,
     })
 
+# ----------- Barber-----------
+User = get_user_model()
+@login_required
+@role_required(['manager'])
+def create_barber_otp(request, shop_id):
+    shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
+    already_is_barber = BarberProfile.objects.filter(user=request.user).exists()
+    print("CREATE BARBER")
+    if request.method == 'POST':
+        print("CREATE BARBER POST")
+        form = BarberCreateForm(request.POST, include_is_self=not already_is_barber)
+        if form.is_valid():
+            print("CREATE BARBER Valid")
+            is_self = form.cleaned_data.get('is_self', False)
 
-# ---------- Section Barber
+            if is_self:
+                # اگر قبلاً آرایشگر شده باشه، نمی‌ذاریم دوباره ثبت بشه
+                if already_is_barber:
+                    messages.error(request, "شما قبلاً به عنوان آرایشگر ثبت شده‌اید.")
+                    return redirect('salon:manage_shop', shop_id=shop.id)
+
+                BarberProfile.objects.create(user=request.user, shop=shop)
+                request.user.save()
+                messages.success(request, "شما به عنوان آرایشگر ثبت شدید.")
+                return redirect('salon:manage_shop', shop_id=shop.id)
+            else:
+                phone = form.cleaned_data['phone']
+                first_name = form.cleaned_data['first_name']
+                last_name = form.cleaned_data['last_name']
+
+                status, message = invite_or_reinvite_barber(
+                    request, shop, phone, first_name, last_name
+                )
+                if status:
+                    return redirect('salon:manage_shop', shop_id=shop.id)
+                else:
+                    form.add_error('phone', message)
+    else:
+        form = BarberCreateForm(include_is_self=not already_is_barber)
+
+    return render(request, 'account/create_barber_otp.html', {
+        'form': form,
+        'already_is_barber': already_is_barber,
+        'shop': shop
+    })
+
 @login_required
 @role_required(['barber'])
 def barber_profile(request):
@@ -135,48 +269,126 @@ def barber_profile(request):
         'profile': profile,
     })
 
+
 @login_required
 @role_required(['barber'])
 def edit_barber_profile(request):
-    
     profile = request.user.barber_profile
+    
     if request.method == 'POST':
-        form = BarberProfileForm(request.POST, request.FILES, instance=profile)
+        form = BarberProfileEditForm(request.POST, request.FILES, instance=profile, user=request.user)
+        
         if form.is_valid():
+            # کد حذف آواتار قدیمی...
+            try:
+                old_profile = BarberProfile.objects.get(pk=profile.pk)
+                old_avatar = old_profile.avatar
+            except BarberProfile.DoesNotExist:
+                old_avatar = None
+
+            if 'avatar' in request.FILES and old_avatar:
+                old_avatar_path = os.path.join(settings.MEDIA_ROOT, old_avatar.name)
+                if os.path.exists(old_avatar_path):
+                    try:
+                        os.remove(old_avatar_path)
+                    except Exception as e:
+                        print(f"Error deleting old avatar: {e}")
             form.save()
-            return redirect('account:barber_profile')
+            # به جای ریدایرکت، فرم را با داده‌های جدید رندر کنید
+            form = BarberProfileEditForm(instance=request.user.barber_profile, user=request.user)
+            
+            # رندر همان صفحه با فرم جدید و پیام
+            return render(request, 'account/edit_barber_profile.html', {
+                'form': form,
+                'show_success_message': True  # پرچم برای نمایش پیام
+            })
     else:
-        form = BarberProfileForm(instance=profile)
+        form = BarberProfileEditForm(instance=profile, user=request.user)
+    
+    return render(request, 'account/edit_barber_profile.html', {'form': form, 'show_success_message': False})
 
-    return render(request, 'account/edit_barber_profile.html', {
-        'form': form,
-    })
-
-
+#-------------
 @login_required
 @role_required(['manager'])
 def toggle_barber_status(request, barber_id, shop_id):
     
     barber = get_object_or_404(BarberProfile, user_id=barber_id, shop__manager=request.user)
-
     barber.status = not barber.status
     barber.save()
 
     return redirect('salon:manage_shop', shop_id=shop_id)
 
 # ---------- Customer Section
-def customer_signup(request):
+# def customer_signup(request):
+#     if request.method == 'POST':
+#         form = CustomerSignUpForm(request.POST)
+#         if form.is_valid():
+#             user = form.save()
+#             login(request, user)
+#             return redirect('account:customer_profile')
+#     else:
+#         form = CustomerSignUpForm()
+#     return render(request, 'account/customer_signup.html', {'form': form})
+
+
+def customer_signup_phone(request):
     if request.method == 'POST':
-        form = CustomerSignUpForm(request.POST)
+        form = SignUpPhoneForm(request.POST)
         if form.is_valid():
-            user = form.save()
+            phone = form.cleaned_data['phone']
+            if CustomUser.objects.filter(username=phone).exists():
+                messages.error(request, 'کاربری با این شماره قبلاً ثبت‌نام کرده است.')
+                return redirect('account:customer_signup_phone')
+            send_otp_code(phone, request)
+            return redirect('account:customer_verify_otp')
+    else:
+        form = SignUpPhoneForm()
+    return render(request, 'account/customer_signup_phone.html', {'form': form})
+
+
+# تایید کد otp
+def customer_verify_otp(request):
+    if request.method == 'POST':
+        form = SignUpOTPForm(request.POST)
+        if form.is_valid():
+            otp_code = form.cleaned_data['otp_code']
+            if otp_code == request.session.get('otp_code'):
+                # OTP صحیح است
+                request.session['otp_verified'] = True
+                return redirect('account:customer_complete_signup')
+            else:
+                messages.error(request, 'کد تایید نادرست است.')
+    else:
+        form = SignUpOTPForm()
+    return render(request, 'account/customer_verify_otp.html', {'form': form})
+
+
+# فرم تکمیل ثبت نام
+def customer_complete_signup(request):
+    if not request.session.get('otp_verified'):
+        return redirect('account:customer_signup_phone')
+
+    phone = request.session.get('otp_phone')
+    if request.method == 'POST':
+        form = CustomerCompleteSignupForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.role = 'customer'
+            user.phone = phone
+            user.username = phone  # یا هر سیاست دلخواه برای username
+            user.save()
+            CustomerProfile.objects.create(user=user)
             login(request, user)
+            # پاک کردن session های مربوط به otp
+            request.session.pop('otp_code', None)
+            request.session.pop('otp_phone', None)
+            request.session.pop('otp_verified', None)
             return redirect('account:customer_profile')
     else:
-        form = CustomerSignUpForm()
-    return render(request, 'account/customer_signup.html', {'form': form})
+        form = CustomerCompleteSignupForm()
+    return render(request, 'account/customer_complete_signup.html', {'form': form})
 
-
+#-----------------------------------
 @login_required
 @role_required(['customer'])
 def customer_profile(request):
@@ -210,7 +422,11 @@ def edit_customer_profile(request):
         form = CustomerProfileForm(request.POST, instance=profile)
         if form.is_valid():
             form.save()
-            return redirect('account:customer_profile')
+            form = CustomerProfileForm(instance=profile)
+            return render(request, 'account/edit_customer_profile.html', {
+                'form': form,
+                'show_success_message': True  # پرچم برای نمایش پیام
+            })
     else:
         form = CustomerProfileForm(instance=profile)
 

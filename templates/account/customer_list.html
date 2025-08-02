@@ -1,65 +1,73 @@
 {% extends 'base.html' %}
 {% load custom_filters %}
 {% block title %}پروفایل{% endblock %}
-
 {% block navleft %}
-<a href="{% url 'salon:manage_shop' shop.id %}" class="btn btn-secondary">بازگشت به مدیریت</a>
-<form method="post" action="{% url 'account:logout' %}">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-secondary">خروج</button>
-</form>
+<a href="{% url 'account:profile' %}" class="btn btn_nav">پروفایل</a>
+<a href="{% url 'salon:manage_shop' shop.id %}" class="btn btn_nav">مدیریت</a>
 {% endblock %}
+
 {% block navright %}
-<h4>{{ shop.name }} | فهرست مشتریان</h4>
+<h1>آرایشگر من</h1>
 {% endblock %}
 
 {% block content %}
-{% if messages %}
-    <ul class="messages">
-        {% for message in messages %}
-            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-        {% endfor %}
-    </ul>
-{% endif %}
+<!-- نمایش خطاهای فرم -->
+<div class="row justify-content-center">
+    <div class="col">
+        <div class="card shadow rounded-4">
+            <div class="card-body p-4">
+                <h5 class="mb-4 text-center">فهرست مشتریان</h5>
+                {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}" {% endif %}>{{ message }}</li>
+                        {% endfor %}
+                </ul>
+                {% endif %}
 
-<!-- فرم جستجو -->
-<form method="GET" action="{% url 'account:customer_list' shop.id %}" class="d-flex">
-    <input type="text"  class="form-control" style="border-left: none;"  name="search" value="{{ search_query }}" placeholder="جستجو...">
-    <input type="hidden" name="show_active" value="{{ show_active|yesno:'true,false' }}">
-    <button type="submit" style="border-radius: .25rem 0 0 .25rem; display: flex; align-items: center ;height: calc(1.5em + .75rem + 2px);">جستجو</button>
-</form>
-
-<table class="w-100">
-    <thead>
-        <tr>
-            <th></th>
-            <th>نام کاربری</th>
-            <th>نام</th>
-            <th>نام خانوادگی</th>
-            <th>تلفن</th>
-            <th>تاریخ عضویت</th>
-            <th>وضعیت</th>
-            <th>عملیات</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for customer_shop, customer, joined_at in customers_with_joined %}
-            <tr>
-                <td>{{ forloop.counter }}</td> 
-                <td>{{ customer.username }}</td>
-                <td>{{ customer.first_name }}</td>
-                <td>{{ customer.last_name }}</td>
-                <td>{{ customer.phone }}</td>
-                <td>{{ joined_at|j_date }}</td>
-                <td>{{ customer_shop.is_active|yesno:"فعال,غیرفعال" }}</td>
-                <td>
-                    <a href="{% url 'account:toggle_customer_status' customer.id shop.id %}">
-                        {{ customer_shop.is_active|yesno:"غیرفعال,فعال" }}
-                    </a>
-                </td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
-<br>
+                <!-- فرم جستجو -->
+                <div class="text-right">
+                    <form method="GET" action="{% url 'account:customer_list' shop.id %}" class="d-flex">
+                        <input type="text" class="form-control input_search"  name="search"
+                            value="{{ search_query }}" placeholder="جستجو...">
+                        <input type="hidden" name="show_active" value="{{ show_active|yesno:'true,false' }}">
+                        <button type="submit" class="btn btn_search">جستجو</button>
+                    </form>    
+                </div>
+                <table class="w-100">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>نام کاربری</th>
+                            <th>نام</th>
+                            <th>نام خانوادگی</th>
+                            <th>تلفن</th>
+                            <th>تاریخ عضویت</th>
+                            <th>وضعیت</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer_shop, customer, joined_at in customers_with_joined %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ customer.username }}</td>
+                            <td>{{ customer.first_name }}</td>
+                            <td>{{ customer.last_name }}</td>
+                            <td>{{ customer.phone }}</td>
+                            <td>{{ joined_at|j_date }}</td>
+                            <td>{{ customer_shop.is_active|yesno:"فعال,غیرفعال" }}</td>
+                            <td>
+                                <a href="{% url 'account:toggle_customer_status' customer.id shop.id %}">
+                                    {{ customer_shop.is_active|yesno:"غیرفعال,فعال" }}
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

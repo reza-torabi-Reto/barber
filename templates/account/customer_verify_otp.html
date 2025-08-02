@@ -1,0 +1,23 @@
+{% extends "base_index.html" %}
+{% block title %}نام نویسی مدیر{% endblock %}
+{% block navbar %} <h1 class="text-center">نام نویسی مدیر</h1> {% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow rounded-4">
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group mb-3">
+                        {{ form.as_p }}
+                    </div>
+                    <div class="form-group mb-3 text-left">
+                        <button type="submit" class="btn btn-primary mt-2">تایید کد</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

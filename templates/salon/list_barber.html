@@ -3,7 +3,7 @@
 {% block title %}پروفایل{% endblock %}
 {% block content %}
     <h1>آرایشگرهای {{ shop.name }}</h1>
-    <a href="{% url 'salon:create_barber' shop.id %}">ثبت آرایشگر جدید</a>
+    <a href="{% url 'salon:create_barber_otp' shop.id %}">ثبت آرایشگر جدید</a>
     <br><br>
     
     {% if barbers %}

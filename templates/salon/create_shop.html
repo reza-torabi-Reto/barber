@@ -1,52 +1,45 @@
-<!-- salon/templates/salon/create_shop.html -->
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}نوبت آرا | ایجاد آرایشگاه {{ user.nickname }}{% endblock %}
+{% block title %}نوبت آرا | ویرایش پرونده {{ user.nickname }}{% endblock %}
 
 {% block navleft %}
-<a href="{% url 'account:profile' %}" class="btn btn-secondary">بازگشت به پروفایل</a>
-<form method="post" action="{% url 'account:logout' %}">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-secondary">خروج</button>
-</form>
+<a href="{% url 'account:profile' %}" class="btn btn_nav">پروفایل</a>
 {% endblock %}
 {% block navright %}
 <div class="d-flex align-items-baseline justify-content-end">
-    <h4>نوبت آرا | ایجاد آرایشگاه {{ user.nickname }}</h4>
+    <h1>آرایشگر من</h1>
 </div>
 {% endblock %}
 
 {% block content %}
-    <form method="post">
-        {% csrf_token %}
-        <div class="row">
-            <div class="col-md-6">
-                <p>
-                    <label for="id_name">نام آرایشگاه:</label>
-                    <input type="text" class="form-control" name="name" maxlength="100" required="" id="id_name">
-                </p>
-            </div>
-            <div class="col-md-6">
-                <p>
-                    <label for="id_phone">شماره تماس:</label>
-                    <input type="text" class="form-control" name="phone" maxlength="15" required="" id="id_phone">
-                </p>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-6">
-                <p>
-                    <label for="id_address">آدرس دقیق:</label>
-                    <textarea name="address" class="form-control" cols="40" rows="4" required="" id="id_address"></textarea>
-                  </p>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col text-left">                
-                <p class="text-left">
-                <button type="submit" class="btn btn-primary">ثبت آرایشگر</button>
-                </p>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow rounded-4">
+            <div class="card-body p-4">
+                <h5 class="mb-4 text-center">ایجاد آرایشگاه</h5>
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label for="id_name">نام آرایشگاه:</label>
+                        <input type="text" class="form-control" name="name" maxlength="100" required="" id="id_name">
+                    </div>
+                    <div class="form-group">
+                        <label for="id_phone">شماره تماس:</label>
+                        <input type="text" class="form-control" name="phone" maxlength="15" required="" id="id_phone">
+                    </div>
+                    <div class="form-group">
+                        <label for="id_address">آدرس دقیق:</label>
+                        <textarea name="address" class="form-control" cols="40" rows="4" required=""
+                            id="id_address"></textarea>
+                    </div>
+                    <div class="form-group text-left">
+                        <button type="submit" class="btn custom-btn">ثبت</button>
+                    </div>
+
+                </form>
             </div>
         </div>
-    </form>
+    </div>
+</div>
 {% endblock %}

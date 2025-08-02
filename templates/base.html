@@ -18,29 +18,39 @@
     <link rel="stylesheet" href="{% static 'css/mystyles.css' %}">
     {% block mycss%}{% endblock %}
 </head>
-<body class="p-2">
+<body>
     <header>
         <nav class="container">
             <div class="row">
                 <div class="col-md-6">
                     <div class="d-flex justify-content-first">
-                        {% block navright %}{% endblock %}    
+                        <form method="post" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn_logout"><i class="fa fa-sign-out" aria-hidden="true"></i>
+                            </button>
+                        </form>
+                        {% block navleft %}
+                        {% endblock %}
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="d-flex justify-content-end">
-                    {% block navleft %}{% endblock %}
+                
+                <div class="col-md-6">                    
+                    <div class="d-flex justify-content-end notification-dropdown">
+                        <button id="notification-btn">
+                            <i class="fa fa-bell" aria-hidden="true"></i> <span id="notif-count" style="color:red;"></span>
+                        </button>
+                        <ul id="notification-list" style="list-style:none; padding:0; max-height:300px; overflow-y:auto; border:1px solid #ccc; display:none; position: absolute;top: 18px;">
+                            <!-- نوتیفیکیشن‌ها اینجا اضافه می‌شوند -->
+                        </ul>
                     </div>
+
                 </div>
             </div>
-            <div class="col">
-                <div class="notification-dropdown">
-                    <button id="notification-btn">
-                        <i class="fa fa-bell" aria-hidden="true"></i> <span id="notif-count" style="color:red;"></span>
-                    </button>
-                    <ul id="notification-list" style="list-style:none; padding:0; max-height:300px; overflow-y:auto; border:1px solid #ccc; display:none;">
-                        <!-- نوتیفیکیشن‌ها اینجا اضافه می‌شوند -->
-                    </ul>
+            <div class="row">
+                <div class="col">
+                    <div class="d-flex justify-content-center">
+                        {% block navright %}{% endblock %}    
+                    </div>
                 </div>
             </div>
         </nav>
@@ -54,7 +64,7 @@
 
     
 
-{% block myjs %}
+
 <!-- Bootstrap JS, Popper.js, and jQuery -->
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
@@ -156,12 +166,12 @@
     }
 
     // هر 500 ثانیه یکبار پولینگ کن
-    setInterval(fetchNotifications, 10000);
+    setInterval(fetchNotifications, 1000000);
 
     // بار اول صفحه لود شد، اجرا کن
     fetchNotifications();
 </script>
-{% endblock %}
+{% block myjs %}{% endblock %}
     
 </body>
 </html>
