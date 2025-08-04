@@ -1,55 +1,56 @@
 {% extends 'base.html' %}
-{% block title %}نوبت آرا | پرونده {{ user.nickname }}{% endblock %}
 {% load custom_filters %}
-
+{% block title %}نوبت آرا | پرونده {{ user.nickname }}{% endblock %}
 {% block navleft %}
-<a href="{% url 'account:customer_profile' %}" class="btn btn-secondary">بازگشت به پروفایل</a>
-
+<a href="{% url 'account:customer_profile' %}" class="btn btn_nav">پروفایل</a>
 {% endblock %}
 {% block navright %}
 <div class="d-flex align-items-baseline justify-content-end">
-    <h4>نوبت آرا | تأیید نوبت {{ shop.name }}</h4>
+    <h1>آرایشگر من</h1>
 </div>
 {% endblock %}
 
 {% block content %}
-<div class="row">
-    <h4 class="col mb-2">جزییات</h4>
-</div>
-<div class="row">
-    <div class="col-12">
-        <p><strong>آرایشگر:</strong> {{ barber.nickname }}</p>
-    </div>
-    <div class="col-12">
-        <p><strong>قیمت کل:</strong> {{ total_price }} تومان</p>
-    </div>
-    <div class="col-12">
-        <p><strong>تاریخ:</strong> {{ start_time|j_date }}</p>
-    </div>
-</div>
-<div class="row">
-    <div class="col-12">
-        <p><strong>ساعت:</strong>از ساعت {{ start_time|time:"H:i" }} تا ساعت {{ end_time|time:"H:i" }} ( {{ total_duration }} دقیقه)</p>
-    </div>
-    <div class="col-12">
-        <p><strong>خدمات:</strong></p>
-        <p>
-        <ul>
-            {% for service in services %}
-            <li>{{ service.name }} | ({{ service.duration }} دقیقه) - ({{service.price}} تومان)</li>
-            {% endfor %}
-        </ul>
-        </p>
-    </div>
-</div>
-<hr>
-<div class="row">
-    <div class="col-12 text-left">
-        <form method="post">
-            {% csrf_token %}
-            <a href="{% url 'salon:select_date_time_barber' %}" class="btn btn-danger">لغو</a>
-            <button type="submit" class="btn btn-success">تأیید نوبت</button>
-        </form>
+
+<div class="row justify-content-center mb-4">
+    <div class="col-md-6">
+        <div class="card shadow rounded-4">
+            <div class="card-body p-4">
+                <h5 class="mb-4 text-center">جزییات</h5>
+                <div class="profile_manager_info">
+                    <label for="" class="text-center">آرایشگر:</label>
+                    {{ barber.nickname }}
+                </div>
+                <div class="profile_manager_info">
+                    <label for="" class="text-center">قیمت کل:</label>
+                    {{ total_price }} تومان
+                </div>
+                <div class="profile_manager_info">
+                    <label for="" class="text-center">تاریخ:</label>
+                    {{ start_time|j_date }}
+                </div>
+                
+                <div class="profile_manager_info">
+                    <label for="" class="text-center">ساعت:</label>
+                    از {{ start_time|time:"H:i" }} تا {{ end_time|time:"H:i" }} ( {{ total_duration }} دقیقه)
+                </div>
+                <div class="profile_manager_info flex-column align-items-start pb-4">
+                    <label for="" class="text-center mb-2">سرویس‌ها:</label>
+                    <ul class="m-0 p-0">
+                        {% for service in services %}
+                        <li class="rounded">{{ service.name }} : ({{ service.duration }} دقیقه) - ({{service.price}} تومان)</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="text-center">
+                    <form method="post">
+                        {% csrf_token %}
+                        <a href="{% url 'salon:select_date_time_barber' %}" class="btn btn-danger">لغو</a>
+                        <button type="submit" class="btn btn-success">تأیید نوبت</button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

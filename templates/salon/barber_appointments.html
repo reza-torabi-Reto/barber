@@ -60,44 +60,10 @@
                 {% endif %}
             </td>
             <td>
-                {% if appointment.status == 'pending' %}
-                {% if appointment.start_time > now %}
-                <a href="{% url 'salon:appointment_detail_manager' appointment.id %}"
-                    class="text-info text-decoration-none">
-                    <i class="bi bi-check-circle"></i> تایید یا لغو
-                </a>
-                {% else %}
-                <a href="{% url 'salon:appointment_detail_manager' appointment.id %}"
+                <a href="{% url 'salon:appointment_detail_barber' appointment.id %}"
                     class="text-info text-decoration-none">
                     <i class="bi bi-info-circle"></i> جزییات
                 </a>
-                {% endif %}
-                {% elif appointment.status == 'confirmed' %}
-                {% if appointment.start_time > now %}
-                <a href="{% url 'salon:appointment_detail_manager' appointment.id %}"
-                    class="text-danger text-decoration-none">
-                    <i class="bi bi-x-circle"></i> لغو نوبت
-                </a>
-                {% else %}
-                <a href="{% url 'salon:complete_appointment_confirm' appointment.id %}"
-                    class="text-success text-decoration-none">
-                    <span class="text-success">
-                        <i class="bi bi-check2-circle"></i> تکمیل نوبت
-                    </span>
-                </a>
-                {% endif %}
-                {% elif appointment.status == 'completed' %}
-                <a href="{% url 'salon:appointment_detail_manager' appointment.id %}"
-                    class="text-info text-decoration-none">
-                    <i class="bi bi-info-circle"></i> جزئیات
-                </a>
-
-                {% elif appointment.status == 'canceled' %}
-                <a href="{% url 'salon:appointment_detail_manager' appointment.id %}"
-                    class="text-info text-decoration-none">
-                    <i class="bi bi-info-circle"></i> جزئیات
-                </a>
-                {% endif %}
             </td>
         </tr>
         {% endfor %}

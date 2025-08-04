@@ -1,51 +1,64 @@
 {% extends 'base.html' %}
-{% load tz %}
 {% load custom_filters %}
-
-{% block title %}جزئیات نوبت{% endblock %}
+{% load tz %}
+{% block title %}آرایشگر من{% endblock %}
 {% block navleft %}
-<a href="{% url 'salon:customer_appointments' %}" class="btn btn-secondary">بازگشت به مدیریت</a>
-
+<a href="{% url 'account:customer_profile' %}" class="btn btn_nav">پروفایل</a>
 {% endblock %}
 {% block navright %}
-<h4>{{ appointment.shop.name }} | تایید نوبت</h4>
+<div class="d-flex align-items-baseline justify-content-end">
+    <h1>آرایشگر من</h1>
+</div>
 {% endblock %}
 
 {% block content %}
 
-<div class="row">
-    <div class="col-12"><strong>آرایشگاه:</strong> {{ appointment.shop.name }}</div>
-    <div class="col-12"><strong>آرایشگر:</strong> {{ appointment.barber.nickname }}</div>
-    <div class="col-12"><strong>تاریخ/زمان:</strong> {{ appointment.start_time|j_date }} {{
-        appointment.start_time|localtime|j_time }}</div>
-    <div class="col-12"><strong>خدمات:</strong> {{ appointment|get_services }}</div>
-    <div class="col-12"><strong>وضعیت:</strong>
-        {% if appointment.status == 'canceled' %} <!--  and appointment.canceled_by -->
-        <span style="color: red;">این نوبت توسط {{ appointment.get_canceled_by_display }} لغو شده است.</span>
-
-        {% elif appointment.status == 'pending' and appointment.start_time < now %} <span style="color: gray;">این نوبت
-            منقضی شده است.</span>
-            {% else %}
-            {{ appointment.get_status_display }}
-            {% endif %}
+<div class="row justify-content-center mb-4">
+    <div class="col-md-6">
+        <div class="card shadow rounded-4">
+            <div class="card-body p-4">
+                <h5 class="mb-4 text-center">جزییات</h5>
+                <div class="profile_manager_info">
+                    <label for="" class="text-center">آرایشگاه:</label>
+                    {{ appointment.shop.name }}
+                </div>
+                <div class="profile_manager_info">
+                    <label for="" class="text-center">آرایشگر:</label>
+                    {{ appointment.barber.nickname }}
+                </div>
+                <div class="profile_manager_info">
+                    <label for="" class="text-center">تاریخ/زمان:</label>
+                    {{ appointment.start_time|j_date }} {{appointment.start_time|localtime|j_time }}
+                </div>
+                <div class="profile_manager_info">
+                    <label for="" class="text-center">خدمات:</label>
+                    {{ appointment|get_services }}
+                </div>
+                <div class="profile_manager_info">
+                    <label for="" class="text-center">وضعیت:</label>
+                    {% if appointment.status == 'canceled' %} 
+                        <span style="color: red;">این نوبت توسط {{ appointment.get_canceled_by_display }} لغو شده است.</span>
+                    {% elif appointment.status == 'pending' and appointment.start_time < now %} 
+                        <span style="color: gray;">این نوبت منقضی شده است.</span>
+                    {% else %}
+                        {{ appointment.get_status_display }}
+                    {% endif %}
+                </div>
+                <div class="text-center">
+                    {% if appointment.status == 'confirmed' and appointment.start_time > now %}
+                        <form method="post">
+                        {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">لغو نوبت</button>
+                        </form>
+                    {% elif appointment.status == 'pending' and appointment.start_time > now %}
+                        <form method="post">
+                        {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">لغو نوبت</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
-
-
-
-    {% if appointment.status == 'confirmed' and appointment.start_time > now %}
-    <div class="col-12 mt-3">
-        <form method="post">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger">لغو نوبت</button>
-        </form>
-    </div>
-    {% elif appointment.status == 'pending' and appointment.start_time > now %}
-    <div class="col-12 mt-3">
-        <form method="post">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger">لغو نوبت</button>
-        </form>
-    </div>
-    {% endif %}
 </div>
 {% endblock %}

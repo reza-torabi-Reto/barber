@@ -54,9 +54,7 @@
                     <a href="{% url 'account:edit_manager_profile' %}" class="btn custom-btn w-100 mt-2">ویرایش
                         پروفایل</a>
                 </div>
-
                 <hr>
-
                 <h5 class="mb-4 text-center">آراشگاه های من</h5>
                 {% if user.managed_shops %}
                 <ul class="list-group mb-2 pr-0">
@@ -76,6 +74,9 @@
                 {% else %}
                 <p>شما هنوز آرایشگاهی ثبت نکرده‌اید.</p>
                 {% endif %}
+                <div class="text-center">
+                    <a href="{% url 'salon:create_shop' %}" class="btn custom-btn w-100 mt-2">ساخت آراشگاه</a>
+                </div>  
             </div>
         </div>
     </div>

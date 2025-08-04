@@ -3,7 +3,7 @@
 {% load tz %}
 {% block title %}آرایشگر من{% endblock %}
 {% block navleft %}
-<a href="{% url 'salon:manage_shop' appointment.shop.id %}" class="btn btn_nav">پروفایل</a>
+<a href="{% url 'account:barber_profile' %}" class="btn btn_nav">پروفایل</a>
 {% endblock %}
 {% block navright %}
 <div class="d-flex align-items-baseline justify-content-end">
@@ -18,13 +18,6 @@
         <div class="card shadow rounded-4">
             <div class="card-body p-4">
                 <h5 class="mb-4 text-center">جزییات</h5>
-                {% if appointment.status == 'confirmed' and appointment.start_time > now %}
-                    <div class="col-12">
-                        <div class="alert alert-warning">
-                            آیا از لغو نوبت زیر مطمئن هستید؟
-                        </div>
-                    </div>
-                {% endif %}
                 <div class="profile_manager_info">
                     <label for="" class="text-center">آرایشگر:</label>
                     {{ appointment.barber.nickname }}
@@ -49,26 +42,6 @@
                         <span style="color: gray;">این نوبت منقضی شده است.</span>
                     {% else %}
                         {{ appointment.get_status_display }}
-                    {% endif %}
-                </div>
-                <div class="text-center">
-                    {% if appointment.status == 'pending' and appointment.start_time > now %}
-                    <form method="post">
-                        {% csrf_token %}
-                        <button type="submit" name="action" value="confirm" class="btn btn-success">تأیید نوبت</button>
-                        <button type="submit" name="action" value="cancel" class="btn btn-danger">لغو نوبت</button>
-                    </form>
-                    {% elif appointment.status == 'confirmed' and appointment.start_time > now %}
-                    <form method="post">
-                        {% csrf_token %}
-                        <button type="submit" name="action" value="cancel" class="btn btn-danger">لغو نوبت</button>
-                    </form>
-                
-                    {% elif appointment.status == 'confirmed' and appointment.start_time < now %} <form method="post"
-                        action="{% url 'salon:complete_appointment_confirm' appointment.id %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-success mt-2">تکمیل نوبت</button>
-                        </form>
                     {% endif %}
                 </div>
             </div>

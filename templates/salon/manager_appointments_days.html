@@ -71,8 +71,7 @@
                             <td>{{ appointment.barber.nickname }}</td>
                             <td>{{ appointment.customer.nickname }}</td>
                             <td>{{ appointment.start_time|j_date }}</td>
-                            <td>{{ appointment.start_time|localtime|j_time }} تا {{
-                                appointment.end_time|localtime|j_time }}</td>
+                            <td>{{ appointment.start_time|localtime|j_time }} تا {{ appointment.end_time|localtime|j_time }}</td>
                             <td>
                                 {% if appointment.status == 'pending' %}
                                 {% if appointment.start_time > now %}

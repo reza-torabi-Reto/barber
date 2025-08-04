@@ -414,6 +414,44 @@ def appointment_detail_manager(request, id):
 
 
 @login_required
+@role_required(['barber'])
+def appointment_detail_barber(request, id):
+    
+    appointment = get_object_or_404(Appointment, id=id)
+
+    # if request.method == 'POST':
+    #     action = request.POST.get('action')
+    #     if appointment.status == 'canceled':
+    #         messages.warning(request, 'این نوبت قبلاً لغو شده است.')
+    #     else:
+    #         if action == 'confirm':
+    #             appointment.status = 'confirmed'
+    #             appointment.save()
+    #             msg_type = 'mo'
+    #             messages.success(request, 'نوبت با موفقیت تایید شد.')
+    #         elif action == 'cancel':
+    #             appointment.status = 'canceled'
+    #             appointment.canceled_by = 'manager'
+    #             appointment.save()
+    #             msg_type = 'mc'
+    #             messages.success(request, 'نوبت لغو شد.')
+    #         url = reverse('salon:appointment_detail_customer', args=[appointment.id])    
+    #         # اعلان به مشتری
+    #         message = message_nitif(appointment, appointment.start_time, msg_type)
+    #         Notification.objects.create(
+    #             user=appointment.customer,
+    #             message=message,
+    #             appointment=appointment,
+    #             url=url,
+    #             type='appointment_update'
+    #         )
+        # return redirect(reverse('salon:manager_appointments', args=[appointment.shop.id]))
+
+
+    return render(request, 'salon/appointment_detail_barber.html', {'appointment': appointment, 'now': timezone.now(),})
+
+
+@login_required
 @role_required(['manager'])
 def complete_appointment_confirm(request, id):
     
@@ -513,7 +551,8 @@ def confirm_appointment(request):
 
     shop = get_object_or_404(Shop, id=appointment_data['shop_id'])
     services = Service.objects.filter(id__in=appointment_data['services'], shop=shop)
-    barber = get_object_or_404(CustomUser, id=appointment_data['barber_id'], role='barber', barber_profile__shop=shop)
+    # barber = get_object_or_404(CustomUser, id=appointment_data['barber_id'], role='barber', barber_profile__shop=shop)
+    barber = get_object_or_404(CustomUser, id=appointment_data['barber_id'], barber_profile__shop=shop)
     date_str = request.GET.get('date')
     time_str = request.GET.get('time')
     if not (date_str and time_str):
@@ -595,9 +634,10 @@ def book_appointment(request, shop_id):
         return redirect('account:customer_profile')
 
     # دریافت آرایشگران فعال آرایشگاه
-    barbers = CustomUser.objects.filter(role='barber',barber_profile__shop=shop,barber_profile__status=True).prefetch_related(
+    # barbers = CustomUser.objects.filter(role='barber',barber_profile__shop=shop,barber_profile__status=True).prefetch_related(
+    #     'barber_profile', 'barber_profile__services')
+    barbers = CustomUser.objects.filter(barber_profile__shop=shop,barber_profile__status=True).prefetch_related(
         'barber_profile', 'barber_profile__services')
-    
     if request.method == 'POST':
         barber_id = request.POST.get('barber_id')
         service_ids = request.POST.getlist('services')  # دریافت لیست خدمات انتخاب‌شده
@@ -610,9 +650,10 @@ def book_appointment(request, shop_id):
             })
 
         # بررسی معتبر بودن آرایشگر
-        barber = get_object_or_404(CustomUser, id=barber_id, role='barber', barber_profile__shop=shop)
+        barber = get_object_or_404(CustomUser, id=barber_id, barber_profile__shop=shop)
+        print("1++")
         services = Service.objects.filter(id__in=service_ids, shop=shop, barber=barber.barber_profile)
-
+        print("2++")
         if not services.exists():
             return (request, 'salon/book_appointment.html', {
                 'shop': shop,
@@ -715,8 +756,8 @@ def select_date_time_barber(request):
 
     shop = get_object_or_404(Shop, id=appointment_data['shop_id'])
     services = Service.objects.filter(id__in=appointment_data['services'], shop=shop)
-    barber = get_object_or_404(CustomUser, id=appointment_data['barber_id'], role='barber', barber_profile__shop=shop)
-
+    # barber = get_object_or_404(CustomUser, id=appointment_data['barber_id'], role='barber', barber_profile__shop=shop)
+    barber = get_object_or_404(CustomUser, id=appointment_data['barber_id'], barber_profile__shop=shop)
     total_duration = get_total_service_duration(services)
     if total_duration == 0:
         return render(request, 'salon/select_date_time_barber.html', {
@@ -777,7 +818,8 @@ def get_available_times(request):
 
     try:
         selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        barber = CustomUser.objects.get(id=barber_id, role='barber', barber_profile__shop_id=shop_id)
+        # barber = CustomUser.objects.get(id=barber_id, role='barber', barber_profile__shop_id=shop_id)
+        barber = CustomUser.objects.get(id=barber_id, barber_profile__shop_id=shop_id)
         services = Service.objects.filter(id__in=service_ids, shop_id=shop_id)
         total_duration = get_total_service_duration(services)
     except Exception:

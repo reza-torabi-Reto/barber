@@ -30,6 +30,7 @@ urlpatterns = [
     path('detail/<int:shop_id>/', views.shop_detail, name='shop_detail'),
     path('appointment-detail-manager/<int:id>/', views.appointment_detail_manager, name='appointment_detail_manager'),
     path('appointment-detail-customer/<int:id>/', views.appointment_detail_customer, name='appointment_detail_customer'),
+    path('appointment-detail-barber/<int:id>/', views.appointment_detail_barber, name='appointment_detail_barber'),
     path('complete-appointment-confirm/<int:id>/', views.complete_appointment_confirm, name='complete_appointment_confirm'),
     path('notifications/unread/', views.get_unread_notifications, name='get_unread_notifications'),
     path('notifications/mark-read/', views.mark_as_read, name='mark_notification_read'),

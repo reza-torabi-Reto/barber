@@ -50,8 +50,8 @@
                     {% for barber in barbers %}
                     <div class="cart shadow rounded-4 box_barbers p-4 ml-2 mr-2">
                         <div class="avatar mb-2">
-                            {% if barber.avatar %}
-                            <img src="{{ barber.get_avatar_url }}" class="avatar-preview" alt="آواتار فعلی">
+                            {% if barber.barber_profile.avatar %}
+                            <img src="{{ barber.barber_profile.get_avatar_url }}" class="avatar-preview" alt="آواتار فعلی">
                             {% else %}
                             <img src="{% static 'images/default_avatar.png' %}" class="avatar-preview"
                                 alt="آواتار پیشفرض">
