@@ -1,0 +1,61 @@
+from django.urls import path
+from api.v1.views.account import *
+from api.v1.views.salon import *
+
+# api account:
+urlpatterns = [
+    path('signup/<str:role>/send-otp/', SendOTPView.as_view()),  # role = 'manager' یا 'customer'
+    path('signup/verify-otp/', VerifyOTPView.as_view()),
+    path('signup/complete/', CompleteSignupView.as_view()),
+
+    path('login/', CustomTokenObtainPairView.as_view(), name='api_login'),
+    path('force-password-change/', api_force_password_change, name='api_force_password_change'),
+    
+    path('manager/profile/', ManagerProfileView.as_view(), name='api_manager_profile'),
+    path('manager/profile/edit/', EditManagerProfileView.as_view(), name='api_edit_manager_profile'),
+
+    path('shops/<int:shop_id>/invite-barber/', CreateBarberOTPApi.as_view(), name='api_invite-barber'),
+
+
+    path('shops/<int:shop_id>/barbers/<int:barber_id>/toggle-status/', toggle_barber_status_api, name='api_toggle_barber_status'),
+    path('shops/<int:shop_id>/barbers/<int:barber_id>/delete/', delete_barber_api, name='api_delete_barberi'),
+
+    path('barber/profile/', BarberProfileAPIView.as_view(), name='api_barber_profile'),
+    path('barber/profile/edit/', EditBarberProfileAPIView.as_view(), name='api_edit_barber_profile'),
+
+    path('customer/profile/', CustomerProfileAPIView.as_view(), name='api_customer-profile'),
+    path('customer/profile/edit/', EditCustomerProfileAPIView.as_view(), name='api_edit-customer-profile'),
+
+    path('manager/shops/<int:shop_id>/customers/', CustomerListAPIView.as_view(), name='api_customer_list'),
+    path('manager/shops/<int:shop_id>/customers/<int:customer_id>/toggle-status/', ToggleCustomerStatusAPIView.as_view(), name='api_toggle_customer_status'),
+]
+
+# api salon:
+urlpatterns += [
+    path('shops/create/', CreateShopAPIView.as_view(), name='api_create_shop'),
+    path('shops/<int:shop_id>/dashboard/', DashboardShopAPIView.as_view(), name='api_dashboard_shop'),
+    path('shops/<int:shop_id>/edit/', ShopEditAPIView.as_view(), name='api_shop_edit'),
+    
+    path('shops/<int:shop_id>/barber-schedule/<int:barber_id>/', BarberScheduleAPIView.as_view(), name='api_barber_schedule'),
+    
+    path('shops/<int:shop_id>/services/', ServiceListCreateAPIView.as_view(), name='api_service_list_create'),
+    path('shops/<int:shop_id>/services/<int:service_id>/', ServiceDetailAPIView.as_view(), name='api_service_detail'),
+
+    path('customer/shops/<int:shop_id>/join/', JoinShopAPIView.as_view(), name='api_customer-join-shop'),
+    path('customer/shops/<int:shop_id>/leave/', LeaveShopAPIView.as_view(), name='api_customer-leave-shop'),
+    path('customer/shops/<int:shop_id>/', ShopDashboardCustomerAPIView.as_view(), name='api_customer-shop-dashboard'),
+
+    path('appointment/<int:shop_id>/barbers/', BookAppointmentAPIView.as_view(), name='api_book_appointment'),
+    path('appointment/select-date/', SelectDateTimeAPIView.as_view(), name='api_select_date'),
+    path('appointment/available-times/', GetAvailableTimesAPIView.as_view(), name='api_get_available_times'),
+    path('appointment/confirm/', ConfirmAppointmentAPIView.as_view(), name='api_appointment_confirm'),
+
+    path('customer/appointments/', CustomerAppointmentsAPIView.as_view(), name='api_customer_appointments'),
+    path('customer/appointments/<int:shop_id>/', ShopCustomerAppointmentsAPIView.as_view(), name='api_customer_appointments_shop'),
+    path('customer/appointment/<int:id>/detail/', AppointmentDetailCustomerAPIView.as_view(), name='api_customer_appointment_detail'),
+    
+    path('manager-appointments/<int:shop_id>/', api_manager_appointments, name='api_manager_appointments'),
+    path('manager-appointments-days/<int:shop_id>/', api_manager_appointments_days, name='api_manager_appointments_days'),
+    path('manager-appointment/<int:id>/', api_appointment_detail_manager, name='api_appointment_detail_manager'),
+
+]

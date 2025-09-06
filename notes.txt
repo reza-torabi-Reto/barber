@@ -1,57 +1,61 @@
-Next Do:
+#
+- api login -> ok
+-----------------
+#PROFILE MANAGER:
+- api signup manager-> ok
+- api profile manager -> ok
+- api edit profile manager -> ok
+#SHOP MANAGER:
+- api create shop -> ok
+- api dashboard shop -> ok
+- api edit shop -> ok
+- api create barber -> ok
+- api toggle status barber -> ok
+- api delete barber -> ok
+- api set schedule barber -> ok
+- api create service of barber -> ok
+- api edit service of barber -> ok
+- api delete service of barber -> ok
+- api show list customers -> ok 
+- api toggle status customer by manager -> ok 
+- api show list appointments-status -> ok
+- api show list appointments-days -> ok
+- api detail appointment for manager -> ok
+---------------
+#PROFILE BARBER:
+- api profile barber -> ok
+- api edit profile barber -> ok 
+-----------------
+#PROFILE CUSTOMER:
+- api signup customer -> ok
+- api profile manager -> ok
+- api edit profile manager -> ok
+#SHOP CUSTOMER
+- api join shop customer -> ok
+- api leave shop customer -> ok
+- api dashboard shop customer -> ok 
+#APPOINTMENT CUSTOMER:
+- api BookAppointment -> ok
+- api SelectDateTimeAPIView -> ok
+- api GetAvailableTimes -> ok
+- api confirm appointment -> ok 
+- api show list all-appointments/shop-appointments for customer -> ok
+- api detail and cancel appointment by customer -> ok
 
-----------------
-- register manager by OTP -> ok
-- register barber by OTP -> ok
-- create barber-profile for manager -> ok
-- مشکل اتصال مجدد آرایشگر به آرایشگاه بعد از حذف حل شد -> ok
-- تست تعیین ساعت کاری و حذف و اتصال مجدد آرایشگر -> ok
-- مشورت با ای-آی حذف مدیر-آرایشگر! -> ok
-- هدایت کاربر به پروفایل خودش بعد تغییر رمز -> ok
-
-- register manager by OTP -> ok
-- رفع خطای فرم ویرایش و نمایش پیام های فرم -> ok
-- رفع خطای انتخاب ساعت آزاد نوبت -> ok
-- بازطراحی قالب بخش (تایید/لغو نوبت مشتری) و نمایش اعلان -> ok
-- ایجاد صفحه جزییات نوبت برای آرایشگر -> ok
-- حل مشکل بارگذاری آرایشگر-مدیر در نوبت دهی مشتری -> ok
-
-////////////////////////////
-API-React Native 
-
--logout: api->ok
--logon:  api->ok / react->
-
--manager register:  api->ok /   react->ok 
--manager profile:   api->ok /   react->
--manager update:    api->ok /    react->
 
 
--shop create:api->ok   /   react->
--shop edit:  api->ok   /   react->
 
--barber create: api->ok   /   react->
--barber delete: api->ok   /   react->
 
--service create: api->ok  /   react->
--service edit:   api->ok  /   react->
--service delete: api->ok  /   react->
 
-//////////////////////////////////////////////////
 
-- set time working for any barber -> ok
-- set time appointment for any barber ->  ok
-- clear code! -> ok
-- create barber profile -> ok
 
-- change password -> ok
-- recovery password ->
 
-- notification by sms ->
-- notification by email
 
-- sending email ->
-- sending sms ->
+
+
+
+
+
 
 
 
