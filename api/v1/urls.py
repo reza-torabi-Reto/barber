@@ -1,16 +1,28 @@
 from django.urls import path
 from api.v1.views.account import *
 from api.v1.views.salon import *
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,   # login
+    TokenRefreshView,      # refresh
+    TokenVerifyView,       # verify
+)
+
 
 # api account:
 urlpatterns = [
     path('signup/<str:role>/send-otp/', SendOTPView.as_view()),  # role = 'manager' یا 'customer'
+    path("auth/is-auth/", IsAuthView.as_view(), name="is_auth"),
     path('signup/verify-otp/', VerifyOTPView.as_view()),
     path('signup/complete/', CompleteSignupView.as_view()),
 
     path('login/', CustomTokenObtainPairView.as_view(), name='api_login'),
     path('force-password-change/', api_force_password_change, name='api_force_password_change'),
-    
+
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
+
+
     path('manager/profile/', ManagerProfileView.as_view(), name='api_manager_profile'),
     path('manager/profile/edit/', EditManagerProfileView.as_view(), name='api_edit_manager_profile'),
 
@@ -54,8 +66,18 @@ urlpatterns += [
     path('customer/appointments/<int:shop_id>/', ShopCustomerAppointmentsAPIView.as_view(), name='api_customer_appointments_shop'),
     path('customer/appointment/<int:id>/detail/', AppointmentDetailCustomerAPIView.as_view(), name='api_customer_appointment_detail'),
     
-    path('manager-appointments/<int:shop_id>/', api_manager_appointments, name='api_manager_appointments'),
-    path('manager-appointments-days/<int:shop_id>/', api_manager_appointments_days, name='api_manager_appointments_days'),
+    path('manager/appointments/', manager_appointments_api, name='manager_appointments_api'),
     path('manager-appointment/<int:id>/', api_appointment_detail_manager, name='api_appointment_detail_manager'),
-
+ 
+    # ReactNative API:
+    path("notifications/has_unread/",has_unread_notifications, name="has_unread_notifications"),
+    path("notifications/unread/",get_unread_notifications, name="get_unread_notifications"),
+    
+    path("get-salons/manager/",get_salons_manager, name="get_salons_manager"),
+    
+    path("show-salons/manager/",show_salons_manager, name="show_salons_manager"),
+    
+    path("set-active-salon/manager/<int:shop_id>/",set_active_salon, name="set_active_salon"),
+    path("get-active-salon/manager/",get_active_salon, name="get_active_salon"),
+    path("get-customers-active-salon/manager/",get_customers_of_active_salon_manager, name="get_customers_of_active_salon_manager"),
 ]

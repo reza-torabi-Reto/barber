@@ -193,21 +193,95 @@ class AppointmentCustomerSerializer(serializers.ModelSerializer):
         services = obj.selected_services.all()
         return AppointmentServiceSerializer(services, many=True).data
 
-#-- api_manager_appointments, api_manager_appointments_days api-views:
-class AppointmentManagerSerializer(serializers.ModelSerializer):
+# ------------------- سرسالایزرهای اصلی احتمالا ازینجاست
+from django.utils import timezone
+
+class AppointmentSerializer(serializers.ModelSerializer):
     barber_name = serializers.CharField(source='barber.get_full_name', read_only=True)
     customer_name = serializers.CharField(source='customer.get_full_name', read_only=True)
-    start_time_str = serializers.DateTimeField(source='start_time', format='%Y-%m-%d %H:%M', read_only=True)
-    end_time_str = serializers.DateTimeField(source='end_time', format='%Y-%m-%d %H:%M', read_only=True)
+
+    # تاریخ شمسی و ساعت لوکال
+    j_start_date = serializers.SerializerMethodField()
+    start_time_str = serializers.SerializerMethodField()
+    end_time_str = serializers.SerializerMethodField()
 
     class Meta:
         model = Appointment
         fields = [
             'id',
-            'status',
             'barber_name',
             'customer_name',
+            'status',
+            'start_time',
+            'end_time',
+            'j_start_date',
             'start_time_str',
             'end_time_str',
         ]
 
+    def get_j_start_date(self, obj):
+        return j_convert_appoiment(obj.start_time)
+
+    def get_start_time_str(self, obj):
+        local_time = timezone.localtime(obj.start_time)
+        return local_time.strftime('%H:%M')
+
+    def get_end_time_str(self, obj):
+        local_time = timezone.localtime(obj.end_time)
+        return local_time.strftime('%H:%M')
+
+# این 3 تا سرالایزرها واسه ای-پی-آی سالن فعاله که بخاطر خطا فعلا از خیرش گذشتم
+class BarberDetailSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    phone = serializers.CharField(source='user.phone')
+    avatar = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BarberProfile
+        fields = ['id', 'name', 'avatar', 'phone', 'status']
+
+    def get_name(self, obj):
+        return obj.user.nickname() or obj.user.username
+
+    def get_avatar(self, obj):
+        return obj.avatar.url if obj.avatar else None
+
+
+class ServiceDetailSerializer(serializers.ModelSerializer):
+    barber_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Service
+        fields = ['id', 'name', 'price', 'duration', 'barber_name']
+
+    def get_barber_name(self, obj):
+        if obj.barber and obj.barber.user:
+            return obj.barber.user.nickname() or obj.barber.user.username
+        return None
+
+class ShopDetailSerializer(serializers.ModelSerializer):
+    barbers = BarberDetailSerializer(many=True, read_only=True, source='barber_shop')  # ← اصلاح شد
+    services = ServiceDetailSerializer(many=True, read_only=True)
+    logo = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+    manager = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Shop
+        fields = [
+            'id', 'name', 'referral_code', 'active',
+            'logo', 'image', 'address', 'phone', 'manager',
+            'barbers', 'services'
+        ]
+
+    def get_logo(self, obj):
+        return obj.logo.url if obj.logo else None
+
+    def get_image(self, obj):
+        return obj.image_shop.url if obj.image_shop else None
+
+    def get_manager(self, obj):        
+        # چون nickname در مدل user به‌صورت متد تعریف شده نه property
+        if hasattr(obj.manager, 'nickname') and callable(obj.manager.nickname()):
+            return obj.manager.nickname()
+        return obj.manager.username if hasattr(obj.manager, 'username') else None

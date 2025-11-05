@@ -34,7 +34,7 @@ class SendOTPView(APIView):
     def post(self, request, role):
         serializer = PhoneSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
+        print(f"POOOOOSSSTTT")
         phone = serializer.validated_data['phone']
         if CustomUser.objects.filter(username=phone).exists():
             return Response({'error': 'کاربری با این شماره قبلاً ثبت‌نام کرده است.'}, status=400)
@@ -42,14 +42,15 @@ class SendOTPView(APIView):
         otp = str(random.randint(100000, 999999))
         request.session['otp_code'] = otp
         request.session['otp_phone'] = phone
-        request.session['otp_role'] = role
+        request.session['otp_role'] = role #!!!
         print(f"OTP for {phone}: {otp}")
 
-        return Response({"detail": "کد تایید ارسال شد"}, status=200)
+        return Response({"detail": "کد تایید ارسال شد"}, status=201)
 
 
 class VerifyOTPView(APIView):
     def post(self, request):
+        print("STAAART POST")
         if 'otp_phone' not in request.session:
             return Response({"detail": "لطفاً ابتدا شماره تلفن را ارسال کنید"}, status=400)
         
@@ -57,10 +58,11 @@ class VerifyOTPView(APIView):
         serializer.is_valid(raise_exception=True)
 
         otp_input = serializer.validated_data['otp_code']
+        print(f"session_code: {request.session.get('otp_code')} otp: {otp_input}")
         if otp_input == request.session.get('otp_code'):
             request.session['otp_verified'] = True
-            return Response({"message": "کد تایید معتبر است"}, status=200)
-
+            return Response({"message": "کد تایید معتبر است"}, status=201)
+        print("err 400")
         return Response({'error': 'کد تأیید نادرست است.'}, status=400)
 
 
@@ -73,8 +75,9 @@ class CompleteSignupView(APIView):
             return Response({'error': 'مراحل قبلی تأیید نشده‌اند.'}, status=400)
         
         role = request.session.get('otp_role')
+        print(f"role in registrr: {role}")
         phone = request.session.get('otp_phone')
-
+        print(f"Phone: {phone}")
         serializer = BaseSignupSerializer(
             data=request.data,
             context={'request': request, 'phone': phone, 'role': role}
@@ -90,7 +93,7 @@ class CompleteSignupView(APIView):
         return Response({
             "detail": "ثبت‌نام با موفقیت انجام شد",
             "user_id": user.id
-        }, status=200)
+        }, status=201)
 
 # Login----------------------------
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -115,6 +118,27 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+# check validation token 
+class IsAuthView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        بررسی اعتبار توکن و برگرداندن اطلاعات کاربر
+          """
+        print("LOGGGIN")
+        user = request.user
+        
+        serializer = UserProfileSerializer(user)
+        return Response(
+            {
+                "status": 200,
+                "user": serializer.data
+            },
+            status=status.HTTP_200_OK
+        )
+
 
 
 @api_view(['POST'])

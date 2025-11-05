@@ -25,7 +25,9 @@ SECRET_KEY = 'django-insecure-y(r7@%1^46pn+!ks6_7yl#l@th0=5u$6tglw*wc#y#5^$++&zs
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.0.2.2']
+# ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS = ['172.20.171.21', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ["*", "192.168.1.106", "172.20.171.21", "localhost"]
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
@@ -69,11 +71,19 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
+from datetime import timedelta
 
 SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
     'ROTATE_REFRESH_TOKENS': False,
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=5),  # اعتبار توکن دسترسی
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # اعتبار توکن رفرش
+    "ROTATE_REFRESH_TOKENS": False,               # اگه بخوای هر بار با رفرش توکن جدید بده True کن
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+
 }
+
 
 
 ROOT_URLCONF = 'core.urls'

@@ -45,7 +45,7 @@ class BarberProfileManager(models.Manager):
 class BarberProfile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='barber_profile')
     status = models.BooleanField(default=True, verbose_name='وضعیت')
-    shop = models.ForeignKey('salon.Shop', on_delete=models.SET_NULL, null=True, blank=True)
+    shop = models.ForeignKey('salon.Shop', on_delete=models.SET_NULL, null=True, blank=True, related_name='barber_shop')
     avatar = models.ImageField(upload_to=get_random_filename, blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
 

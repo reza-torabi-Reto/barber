@@ -715,6 +715,7 @@ def shop_detail(request, shop_id):
 @login_required
 def get_unread_notifications(request):
     notifications = request.user.notifications.filter(is_read=False).order_by('-created_at')
+    print(f"Notifi : {notifications}")
     data = []
     for noti in notifications:
         data.append({

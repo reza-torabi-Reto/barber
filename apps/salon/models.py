@@ -35,11 +35,10 @@ class Shop(models.Model):
     address = models.TextField(verbose_name="آدرس دقیق")
     phone = models.CharField(max_length=15, verbose_name="شماره تماس")
     status = models.CharField(max_length=10, choices=STATUS_CHOISE, default='active', verbose_name="وضعیت")
+    active = models.BooleanField(default=False, verbose_name="فعال؟")
     create_date = models.DateTimeField(auto_now_add=True, verbose_name="تاریخ ایجاد")
     logo = models.ImageField(upload_to=get_random_logo_name, blank=True, null=True)    
     image_shop = models.ImageField(upload_to=get_random_image_shop_name, blank=True, null=True)
-    # latitude = models.FloatField(null=True, blank=True, verbose_name="عرض جغرافیایی")
-    # longitude = models.FloatField(null=True, blank=True, verbose_name="طول جغرافیایی")
     
     def __str__(self):
         return f"{self.name} ({self.referral_code})"

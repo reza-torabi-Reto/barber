@@ -23,6 +23,7 @@ from utils.salon_utils import get_total_service_duration
 from utils.notification_utils import message_nitif
 
 from services.appointment import find_available_time_slots
+from django.utils.timesince import timesince
 
 
 
@@ -576,81 +577,140 @@ class AppointmentDetailCustomerAPIView(APIView):
         )
 
 #-- show list appointments to manager:
-@api_view(['GET'])
-@role_required(['manager'])
-def api_manager_appointments(request, shop_id):
-    """لیست کلی نوبت‌ها برای مدیر"""
-    shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
-    base_qs = Appointment.objects.filter(shop=shop)
-    today = timezone.now().date()
-    pending_only = request.GET.get('pending')
+# @api_view(['GET'])
+# @role_required(['manager'])
+# def api_manager_appointments(request, shop_id):
+#     """لیست کلی نوبت‌ها برای مدیر"""
+#     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
+#     base_qs = Appointment.objects.filter(shop=shop)
+#     today = timezone.now().date()
+#     pending_only = request.GET.get('pending')
 
-    if pending_only == '1':  # فقط در انتظار تأیید
-        appointments = base_qs.filter(status='pending')
-    elif pending_only == '2':  # فقط امروز
-        appointments = base_qs.filter(start_time__date=today)
-    else:
-        appointments = base_qs
+#     if pending_only == '1':  # فقط در انتظار تأیید
+#         appointments = base_qs.filter(status='pending')
+#     elif pending_only == '2':  # فقط امروز
+#         appointments = base_qs.filter(start_time__date=today)
+#     else:
+#         appointments = base_qs
 
-    appointments = appointments.select_related('barber', 'customer').order_by('-start_time')
+#     appointments = appointments.select_related('barber', 'customer').order_by('-start_time')
 
-    counts = {
-        'pending_count': base_qs.filter(status='pending').count(),
-        'today_count': base_qs.filter(start_time__date=today).count(),
-        'all_count': base_qs.count(),
-    }
+#     counts = {
+#         'pending_count': base_qs.filter(status='pending').count(),
+#         'today_count': base_qs.filter(start_time__date=today).count(),
+#         'all_count': base_qs.count(),
+#     }
 
-    return Response({
-        'shop': shop.name,
-        'counts': counts,
-        'appointments': AppointmentManagerSerializer(appointments, many=True).data,
-        'now': timezone.now(),
-    })
+#     return Response({
+#         'shop': shop.name,
+#         'counts': counts,
+#         'appointments': AppointmentManagerSerializer(appointments, many=True).data,
+#         'now': timezone.now(),
+#     })
 
-#-- show list appointments-by-date to manager:
+# #-- show list appointments-by-date to manager:
+# @api_view(['GET'])
+# @permission_classes([IsAuthenticated])
+# def api_manager_appointments_days(request, shop_id):
+#     shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
+#     appointments = Appointment.objects.filter(shop=shop)
+#     j_date_str = request.GET.get('date')
+#     status_filter = request.GET.get('status')
+#     selected_date = timezone.localdate()
+#     # فیلتر تاریخ فقط وقتی که پارامتر date وجود داشته باشه
+#     if j_date_str:
+#         try:             
+#              parts = list(map(int, j_date_str.split('-')))
+#             # تشخیص فرمت: اگه بخش اول بزرگ باشه یعنی سال هست
+#              if parts[0] > 1400:  # سال-ماه-روز
+#                  selected_date = jdatetime.date(parts[0], parts[1], parts[2]).togregorian()
+#                  appointments = appointments.filter(start_time__date=selected_date)
+#                  print(f"SELECTED: {selected_date}")
+#              else:  # روز-ماه-سال
+#                  selected_date = jdatetime.date(parts[2], parts[1], parts[0]).togregorian()
+#                  appointments = appointments.filter(start_time__date=selected_date)
+#         except Exception as e:
+#             print("Date parse error:", e)
+#     else:
+#         # اگر تاریخ نیست ولی هیچ فیلتر وضعیت هم نیست → پیش‌فرض امروز
+#         if not status_filter:
+#             today = timezone.localdate()
+#             appointments = appointments.filter(start_time__date=today)
+#         else:
+#             # فیلتر وضعیت
+#             if status_filter in ['pending', 'confirmed', 'completed', 'canceled']:
+#                 appointments = appointments.filter(status=status_filter)
+
+#     serializer = AppointmentManagerSerializer(appointments, many=True)
+#     response_data = {
+#         "appointments": serializer.data,
+#         "selected_date": selected_date,
+#         "previous_date": selected_date - timedelta(days=1),
+#         "next_date": selected_date + timedelta(days=1),
+#         "status_filter": status_filter,
+#         "now": timezone.now()
+#     }
+
+#     return Response(response_data)
+
+
+# salon/api/views.py
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def api_manager_appointments_days(request, shop_id):
-    shop = get_object_or_404(Shop, id=shop_id, manager=request.user)
-    appointments = Appointment.objects.filter(shop=shop)
+def manager_appointments_api(request):
+    """
+    API: لیست نوبت‌های آرایشگاه فعال مدیر
+    فیلترها:
+      - ?date=1403-04-07
+      - ?status=pending / confirmed / canceled / completed
+    """
+
+    user = request.user
+    active_shop = Shop.objects.filter(manager=user, is_active=True).first()
+    if not active_shop:
+        return Response(
+            {"detail": "آرایشگاه فعالی یافت نشد."},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    # 🔹 فیلترهای ورودی
     j_date_str = request.GET.get('date')
     status_filter = request.GET.get('status')
-    selected_date = timezone.localdate()
-    # فیلتر تاریخ فقط وقتی که پارامتر date وجود داشته باشه
+
+    # 🔹 محدوده تاریخی
+    today = datetime.today().date()
     if j_date_str:
-        try:             
-             parts = list(map(int, j_date_str.split('-')))
-            # تشخیص فرمت: اگه بخش اول بزرگ باشه یعنی سال هست
-             if parts[0] > 1400:  # سال-ماه-روز
-                 selected_date = jdatetime.date(parts[0], parts[1], parts[2]).togregorian()
-                 appointments = appointments.filter(start_time__date=selected_date)
-                 print(f"SELECTED: {selected_date}")
-             else:  # روز-ماه-سال
-                 selected_date = jdatetime.date(parts[2], parts[1], parts[0]).togregorian()
-                 appointments = appointments.filter(start_time__date=selected_date)
-        except Exception as e:
-            print("Date parse error:", e)
+        try:
+            selected_date = jdatetime.date(*map(int, j_date_str.split('-'))).togregorian()
+        except Exception:
+            selected_date = today
     else:
-        # اگر تاریخ نیست ولی هیچ فیلتر وضعیت هم نیست → پیش‌فرض امروز
-        if not status_filter:
-            today = timezone.localdate()
-            appointments = appointments.filter(start_time__date=today)
-        else:
-            # فیلتر وضعیت
-            if status_filter in ['pending', 'confirmed', 'completed', 'canceled']:
-                appointments = appointments.filter(status=status_filter)
+        selected_date = today
 
-    serializer = AppointmentManagerSerializer(appointments, many=True)
-    response_data = {
-        "appointments": serializer.data,
-        "selected_date": selected_date,
-        "previous_date": selected_date - timedelta(days=1),
-        "next_date": selected_date + timedelta(days=1),
-        "status_filter": status_filter,
-        "now": timezone.now()
-    }
+    start_of_day = datetime.combine(selected_date, datetime.min.time())
+    end_of_day = datetime.combine(selected_date, datetime.max.time())
 
-    return Response(response_data)
+    # 🔹 فیلتر اصلی
+    barbers_in_shop = BarberProfile.objects.filter(shop=active_shop).values_list('user_id', flat=True)
+
+    appointments = Appointment.objects.filter(
+        barber_id__in=barbers_in_shop,
+        start_time__range=(start_of_day, end_of_day)
+    ).select_related('barber__user', 'customer')
+
+    if status_filter in ['pending', 'confirmed', 'completed', 'canceled']:
+        appointments = appointments.filter(status=status_filter)
+
+    # 🔹 مرتب‌سازی و خروجی
+    serializer = AppointmentSerializer(appointments.order_by('-start_time'), many=True)
+    return Response({
+        "shop": active_shop.name,
+        "total": appointments.count(),
+        "appointments": serializer.data
+    })
+
+
+
 
 #-- detail appointment for manager:
 @api_view(['GET', 'PATCH'])
@@ -706,3 +766,216 @@ def api_appointment_detail_manager(request, id):
             "detail": message_text,
             "appointment": serializer.data
         })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def has_unread_notifications(request):
+    """
+    API سبک برای بررسی وجود اعلان‌های نخوانده
+    """
+    has_unread = request.user.notifications.filter(is_read=False).exists()
+    return Response({'has_unread': has_unread})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_unread_notifications(request):
+    """
+    API برای دریافت نوتیفیکیشن‌های نخوانده کاربر لاگین‌شده
+    """
+    notifications = request.user.notifications.filter(is_read=False).order_by('-created_at')
+    print(f"Notifi api : {notifications}")
+    data = [
+        {
+            'id': noti.id,
+            'message': noti.message,
+            'created_at': timesince(noti.created_at) + ' پیش',
+            'url': noti.url or '',
+        }
+        for noti in notifications
+    ]
+
+    return Response({'notifications': data})
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_salons_manager(request):
+    """
+    API برای دریافت نوتیفیکیشن‌های نخوانده کاربر لاگین‌شده
+    """
+    shops = Shop.objects.filter(manager=request.user)
+    selected_shop = shops.filter(active= True).values('active')
+    print(f"selected_shop : {selected_shop}")
+    data = [
+        {
+            'id': shop.id,
+            'name': shop.name,
+            'manager': shop.manager.id,
+            'active' : shop.active
+        }
+        for shop in shops
+    ]
+
+    return Response({'salons': data, 'selected_shop': selected_shop})
+
+
+from django.db.models import Count
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def show_salons_manager(request): 
+    # فقط آرایشگاه‌های مدیر لاگین‌شده
+    shops = (
+        Shop.objects.filter(manager=request.user)
+        .annotate(
+            count_barber=Count("barber_shop", distinct=True),
+            count_customer=Count("customer_memberships", distinct=True),
+        )
+    )
+    data = [
+        {
+            "id": shop.id,
+            "name": shop.name,
+            "referral_code": shop.referral_code,
+            "manager": shop.manager.id,
+            "status": shop.status,
+            "logo": shop.logo.url if shop.logo else None,
+            "count_barber": shop.count_barber,
+            "count_customer": shop.count_customer,
+            "active": shop.active
+        }
+        for shop in shops
+    ]
+    for shop in shops:
+        print(f"Shop: {shop.name}, Active: {shop.active}")
+    return Response({"salons": data})
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def set_active_salon(request, shop_id):
+    
+    try:
+        shop = Shop.objects.get(id=shop_id, manager=request.user)
+    except Shop.DoesNotExist:
+        return Response({'error': 'آرایشگاه یافت نشد.'}, status=404)
+
+    # غیرفعال کردن بقیه آرایشگاه‌ها
+    Shop.objects.filter(manager=request.user).update(active=False)
+
+    # فعال کردن آرایشگاه انتخاب‌شده
+    shop.active = True
+    shop.save()
+
+    return Response({'message': f'آرایشگاه "{shop.name}" فعال شد.'})
+
+# --------- it's not serializer version
+# @api_view(['GET'])
+# @permission_classes([IsAuthenticated])
+# def get_active_salon(request):
+#     shop = Shop.objects.filter(manager=request.user, active=True).first()
+#     if not shop:
+#         return Response({'active_salon': None})
+
+#     barbers = BarberProfile.objects.filter(shop=shop).values('id', 'bio', 'avatar')
+#     services = Service.objects.filter(shop=shop).values('id', 'name', 'price',)
+    
+#     return Response({
+#     'id': shop.id,
+#     'name': shop.name,
+#     'referral_code': shop.referral_code,
+#     'active': shop.active,
+#     'logo': shop.logo.url if shop.logo else None,
+#     'image': shop.image_shop.url if shop.image_shop else None,
+#     'address': shop.address,
+#     'phone': shop.phone,
+#     'manager': request.user.nickname(),
+#     'barbers': list(barbers),
+#     'services': list(services)
+# })
+# این  ای-پی-آی سالن فعاله که بخاطر خطا فعلا از خیرش گذشتم
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_active_salon(request):
+    try:
+        shop = Shop.objects.prefetch_related('services__barber__user', 'barber_shop__user').get(manager=request.user, active=True)
+    except Shop.DoesNotExist:
+        return Response({'error': 'سالن یافت نشد یا به شما تعلق ندارد.'}, status=404)
+
+    serializer = ShopDetailSerializer(shop)
+    return Response(serializer.data)
+
+
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_customers_of_active_salon_manager(request):
+    active_shop = Shop.objects.filter(manager=request.user, active=True).first()  # یا هر فیلدی داری برای active shop
+    if not active_shop:
+        return Response({'detail': 'هیچ آرایشگاه فعالی پیدا نشد.'}, status=404)
+    customer_shops = (CustomerShop.objects.filter(shop=active_shop).select_related('customer', 'shop'))
+    data = [
+        {
+            'id': cs.customer.id,
+            'name': cs.customer.get_full_name() or cs.customer.username,
+            'phone': cs.customer.phone,
+            'joined_at': cs.joined_at.strftime('%Y-%m-%d'),
+            'is_active': cs.is_active,
+        }
+        for cs in customer_shops
+    ]
+    return Response({'customers': data})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def manager_appointments_api(request):
+    user = request.user
+    active_shop = Shop.objects.filter(manager=user, active=True).first()
+    if not active_shop:
+        return Response({"detail": "آرایشگاه فعالی یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+
+    j_date_str = request.GET.get('date')  # YYYY-MM-DD جلالی
+    status_filter = request.GET.get('status')
+
+    barbers_in_shop = BarberProfile.objects.filter(shop=active_shop).values_list('user_id', flat=True)
+    base_qs = Appointment.objects.filter(barber_id__in=barbers_in_shop)
+
+    selected_date = None
+    if j_date_str:
+        try:
+            # تبدیل تاریخ جلالی به میلادی
+            selected_date = jdatetime.date(*map(int, j_date_str.split('-'))).togregorian()
+            # فیلتر مستقیم روی دیتابیس با __date، بدون ریختن لیست تو پایتون
+            base_qs = base_qs.filter(start_time__date=selected_date)
+        except Exception as e:
+            print("Date parse error:", e)
+
+    if status_filter in ['pending', 'confirmed', 'completed', 'canceled']:
+        base_qs = base_qs.filter(status=status_filter)
+
+    # select_related برای کاهش query
+    appointments = base_qs.select_related('barber', 'customer', 'shop').order_by('-created_at')
+
+    # محاسبه تعدادها بدون تاثیر فیلتر وضعیت (query-based)
+    counts_qs = base_qs if selected_date else Appointment.objects.filter(barber_id__in=barbers_in_shop)
+    status_counts = {
+        'all': counts_qs.count(),
+        'pending': counts_qs.filter(status='pending').count(),
+        'confirmed': counts_qs.filter(status='confirmed').count(),
+        'completed': counts_qs.filter(status='completed').count(),
+        'canceled': counts_qs.filter(status='canceled').count(),
+    }
+
+    serializer = AppointmentSerializer(appointments, many=True)
+    return Response({
+        "shop": active_shop.name,
+        "selected_date": j_date_str if j_date_str else None,
+        "filters": status_counts,
+        "total": appointments.count(),
+        "appointments": serializer.data
+    })

@@ -95,6 +95,11 @@ class BaseSignupSerializer(serializers.Serializer):
 
         return user
 
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ["id", "username", "role", "must_change_password"]
+
 
 # Manager-------------------
 class ShopSerializer(serializers.ModelSerializer):
