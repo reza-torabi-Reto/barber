@@ -130,7 +130,7 @@ class IsAuthView(APIView):
         print("LOGGGIN")
         user = request.user
         
-        serializer = UserProfileSerializer(user)
+        serializer = IsProfileManagerSerializer(user)
         return Response(
             {
                 "status": 200,
@@ -138,6 +138,7 @@ class IsAuthView(APIView):
             },
             status=status.HTTP_200_OK
         )
+
 
 
 
@@ -157,6 +158,7 @@ def api_force_password_change(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Manager----------------------------
+# api for web
 class ManagerProfileView(APIView):
     permission_classes = [IsAuthenticated, RoleRequired]
     allowed_roles = ['manager']
@@ -167,6 +169,23 @@ class ManagerProfileView(APIView):
         shops = Shop.objects.filter(manager=user)
 
         serializer = ManagerFullProfileSerializer({
+            "user": user,
+            "manager_profile": profile,
+            "shops": shops
+        }, context={"request": request})
+
+        return Response(serializer.data)
+# api for mobile
+class ManagerProfileApi(APIView):
+    permission_classes = [IsAuthenticated, RoleRequired]
+    allowed_roles = ['manager']
+
+    def get(self, request):
+        user = request.user
+        profile = getattr(user, 'manager_profile', None)
+        shops = Shop.objects.filter(manager=user).count()
+
+        serializer = ManagerFullProfileApiSerializer({
             "user": user,
             "manager_profile": profile,
             "shops": shops

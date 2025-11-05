@@ -95,10 +95,11 @@ class BaseSignupSerializer(serializers.Serializer):
 
         return user
 
-class UserProfileSerializer(serializers.ModelSerializer):
+class IsProfileManagerSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ["id", "username", "role", "must_change_password"]
+
 
 
 # Manager-------------------
@@ -118,7 +119,7 @@ class ShopSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         return request.build_absolute_uri(obj.get_appointments_url())
 
-
+# for web
 class ManagerProfileSerializer(serializers.ModelSerializer):
     avatar_url = serializers.SerializerMethodField()
     default_avatar = serializers.SerializerMethodField()
@@ -135,7 +136,7 @@ class ManagerProfileSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         return request.build_absolute_uri(static("images/default_avatar.png"))
 
-
+# for web
 class ManagerFullProfileSerializer(serializers.Serializer):
     # اطلاعات کاربر
     id = serializers.IntegerField(source="user.id")
@@ -162,6 +163,42 @@ class ManagerFullProfileSerializer(serializers.Serializer):
         request = self.context.get("request")
         from django.urls import reverse
         return request.build_absolute_uri(reverse("salon:create_shop"))
+
+# for mobile
+class ManagerProfileApiSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ManagerProfile
+        fields = ['id', 'avatar_url', 'bio']
+
+    def get_avatar_url(self, obj):
+        request = self.context.get("request")
+        return request.build_absolute_uri(obj.avatar.url) if obj.avatar else None
+
+from utils.date_utils import j_convert_appoiment
+# for mobile
+class ManagerFullProfileApiSerializer(serializers.Serializer):
+    # اطلاعات کاربر
+    id = serializers.IntegerField(source="user.id")
+    username = serializers.CharField(source="user.username")
+    phone = serializers.CharField(source="user.phone")
+    email = serializers.EmailField(source="user.email")
+    nickname = serializers.CharField(source="user.nickname")
+    role_display = serializers.CharField(source="user.get_role_display")
+    shops = serializers.IntegerField()
+    # پروفایل
+    profile = ManagerProfileApiSerializer(source="manager_profile")
+    jcreated_date = serializers.SerializerMethodField()
+
+    def get_jcreated_date(self, obj):
+        user = obj.get("user")
+        if not user or not hasattr(user, "date_joined"):
+            return None
+        return j_convert_appoiment(user.date_joined)
+
+
+
 
 class ManagerProfileUpdateSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True, label='نام کاربری')

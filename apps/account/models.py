@@ -37,6 +37,19 @@ class CustomUser(AbstractUser):
         verbose_name_plural = 'کاربران'
 
 
+class ManagerProfile(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='manager_profile')
+    avatar = models.ImageField(upload_to=get_random_filename, blank=True, null=True)
+    bio = models.TextField(blank=True, null=True)
+    def get_avatar_url(self):
+        """برگرداندن URL آواتار یا آواتار پیش‌فرض"""
+        if self.avatar:
+            return self.avatar.url
+    
+    def __str__(self):
+        return f"{self.user.first_name} {self.user.last_name}"
+    
+
 
 class BarberProfileManager(models.Manager):
     def active(self):

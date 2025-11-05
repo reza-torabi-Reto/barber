@@ -22,8 +22,10 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
 
-
+    #for web
     path('manager/profile/', ManagerProfileView.as_view(), name='api_manager_profile'),
+    #for mobile
+    path('manager/profile/api/', ManagerProfileApi.as_view(), name='api_manager_profile'),
     path('manager/profile/edit/', EditManagerProfileView.as_view(), name='api_edit_manager_profile'),
 
     path('shops/<int:shop_id>/invite-barber/', CreateBarberOTPApi.as_view(), name='api_invite-barber'),
