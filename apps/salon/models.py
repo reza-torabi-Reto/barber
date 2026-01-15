@@ -1,4 +1,4 @@
-# salon/models.py
+# ./apps/salon/models.py:
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.db.models import Q, UniqueConstraint
@@ -21,6 +21,35 @@ def get_random_image_shop_name(instance, filename):
     random_filename = f"{uuid.uuid4()}.{ext}"
     return os.path.join('images/image_shop/', random_filename)
 
+class Province(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
+class City(models.Model):
+    province = models.ForeignKey(Province, on_delete=models.CASCADE, related_name="cities")
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        unique_together = ('province', 'name')
+
+    def __str__(self):
+        return f"{self.name} - {self.province.name}"
+
+
+class District(models.Model):
+    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name="districts")
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        unique_together = ('city', 'name')
+
+    def __str__(self):
+        return f"{self.name} - {self.city.name}"
+
+
 class Shop(models.Model):
     STATUS_CHOISE = (
         ('open', 'باز'),
@@ -32,7 +61,11 @@ class Shop(models.Model):
     manager = models.ForeignKey('account.CustomUser', on_delete=models.CASCADE, related_name='managed_shops', verbose_name="مدیر مسئول")
     name = models.CharField(max_length=100, verbose_name="نام آرایشگاه")
     referral_code = models.CharField(max_length=8, unique=True, verbose_name="کد یکتای جستجو")
+    province = models.ForeignKey(Province, on_delete=models.SET_NULL, null=True, blank=True)
+    city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, blank=True)
+    district = models.ForeignKey(District, on_delete=models.SET_NULL, null=True, blank=True)
     address = models.TextField(verbose_name="آدرس دقیق")
+    
     phone = models.CharField(max_length=15, verbose_name="شماره تماس")
     status = models.CharField(max_length=10, choices=STATUS_CHOISE, default='active', verbose_name="وضعیت")
     active = models.BooleanField(default=False, verbose_name="فعال؟")
@@ -54,6 +87,19 @@ class Shop(models.Model):
     def get_appointments_url(self):
         return reverse("salon:manager_appointments", args=[self.id])
     
+    def get_full_address(self):
+        """آدرس کامل را برمی‌گرداند"""
+        parts = []
+        if self.province:
+            parts.append(self.province.name)
+        if self.city:
+            parts.append(self.city.name)
+        if self.district:
+            parts.append(self.district.name)
+        if self.address:
+            parts.append(self.address)
+        return "، ".join(parts)
+    
     class Meta:
         verbose_name = "آرایشگاه"
         verbose_name_plural = "آرایشگاه‌ها"
@@ -66,6 +112,8 @@ class Service(models.Model):
     name = models.CharField(max_length=100, verbose_name="نام خدمت")
     duration = models.PositiveIntegerField(verbose_name="مدت زمان (دقیقه)")
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="قیمت (تومان)")
+    is_active = models.BooleanField(default=True, verbose_name="غعال؟")
+
 
     def __str__(self):
         return f"{self.name} - {self.shop.name}"
@@ -132,7 +180,7 @@ class AppointmentService(models.Model):
     def __str__(self):
         return f"{self.appointment.id} - {self.service.name}"
     
-
+# بی استفاده(؟)
 class ShopSchedule(models.Model):
     DAY_CHOICES = (
         ('saturday', 'شنبه'),

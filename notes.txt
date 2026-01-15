@@ -1,3 +1,37 @@
+APIs :
+> invate barber -> ok
+> re-invate barber -> ok
+> left barber ->ok
+> force change password -> ok
+> self assign barber -> ok
+> self leave barber ->ok 
+# TODO: prevent leaving barber role if active appointments exist (later)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #
 - api login -> ok
 -----------------
@@ -25,6 +59,7 @@
 #PROFILE BARBER:
 - api profile barber -> ok
 - api edit profile barber -> ok 
+
 -----------------
 #PROFILE CUSTOMER:
 - api signup customer -> ok

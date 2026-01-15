@@ -5,8 +5,8 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.decorators import api_view, permission_classes
+
 from django.contrib.auth import update_session_auth_hash
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
@@ -14,8 +14,9 @@ from django.core.cache import cache
 from django.conf import settings
 from django.contrib.auth import login
 
-from apps.account.models import CustomUser, BarberProfile
-from apps.salon.models import Shop, CustomerShop
+from apps.account.models import *
+from apps.account.permissions import *
+from apps.salon.models import *
 from api.v1.serializers.account import *
 from utils.auth_utils import RoleRequired, role_required
 from services.invitation_service import invite_or_reinvite_barber_api
@@ -24,7 +25,45 @@ import random
 import os
 
 
-#VIEWS:
+User = get_user_model()
+
+def get_active_shop(user):
+    """دریافت سالنی که برای مدیر فعال شده است."""
+    return user.managed_shops.filter(active=True).first()
+
+#-- Force Change Password 
+
+class ForceChangePasswordView(APIView):
+    permission_classes = [ForcePasswordChangePermission,IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        print("Force.........")
+        if user.role != 'barber':
+            return Response(
+                {"error": "این عملیات فقط برای آرایشگران مجاز است."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        # print(f"request.data: {request.data.password1}")
+        serializer = ForceChangePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # 1. تغییر رمز
+        user.set_password(serializer.validated_data['password1'])
+        user.must_change_password = False
+        user.save()
+
+        # 2. فعال‌سازی آرایشگر
+        barber = getattr(user, 'barber_profile', None)
+        if barber:
+            barber.status_barber = BarberStatus.ACTIVE
+            barber.save()
+
+        return Response(
+            {"detail": "رمز عبور با موفقیت تغییر کرد."},
+            status=status.HTTP_200_OK
+        )
+
 
 #-- SignUp OTP Manager & Customer:
 class SendOTPView(APIView):
@@ -37,6 +76,7 @@ class SendOTPView(APIView):
         print(f"POOOOOSSSTTT")
         phone = serializer.validated_data['phone']
         if CustomUser.objects.filter(username=phone).exists():
+            print("کاربری با این شماره قبلاً ثبت‌نام کرده است")
             return Response({'error': 'کاربری با این شماره قبلاً ثبت‌نام کرده است.'}, status=400)
 
         otp = str(random.randint(100000, 999999))
@@ -95,68 +135,130 @@ class CompleteSignupView(APIView):
             "user_id": user.id
         }, status=201)
 
-# Login----------------------------
-class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        # می‌تونی اطلاعات اضافی رو داخل خود توکن ذخیره کنی
-        token['role'] = user.role
-        token['must_change_password'] = user.must_change_password
-        return token
 
-    def validate(self, attrs):
-        data = super().validate(attrs)
-        # اطلاعات اضافی در خروجی لاگین
-        data.update({
-            'id': self.user.id,
-            'username': self.user.username,
-            'role': self.user.role,
-            'must_change_password': self.user.must_change_password
-        })
-        return data
+#  Self assign barber:
+class SelfAssignBarberView(APIView):
+    permission_classes = [IsAuthenticated, IsManager]
 
-class CustomTokenObtainPairView(TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializer
-
-# check validation token 
-class IsAuthView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        """
-        بررسی اعتبار توکن و برگرداندن اطلاعات کاربر
-          """
-        print("LOGGGIN")
+    def post(self, request):
         user = request.user
-        
-        serializer = UserProfileSerializer(user)
+        shop = get_active_shop(request.user)
+
+        if not shop:
+            return Response(
+                {"error": "ابتدا باید یک آرایشگاه ایجاد کنید."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = SelfAssignBarberSerializer()
+
+        try:
+            barber = serializer.save(user=user, shop=shop)
+        except serializers.ValidationError as e:
+            return Response(
+                {"error": e.detail},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         return Response(
             {
-                "status": 200,
-                "user": serializer.data
+                "detail": "شما با موفقیت به‌عنوان آرایشگر این آرایشگاه فعال شدید.",
+                "barber_id": barber.id
             },
+            status=status.HTTP_200_OK
+        )
+#  Left manager from barber:
+class SelfLeaveBarber(APIView):
+    permission_classes = [IsAuthenticated, IsManager]
+
+    def post(self, request):
+        shop = get_active_shop(request.user)
+
+        try:
+            barber = BarberProfile.objects.get(
+                user=request.user,
+                shop=shop
+            )
+        except BarberProfile.DoesNotExist:
+            return Response(
+                {"error": "شما آرایشگر این آرایشگاه نیستید."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = LeaveBarberSerializer()
+        serializer.save(barber)
+
+        return Response(
+            {"detail": "شما با موفقیت از نقش آرایشگر این آرایشگاه خارج شدید."},
+            status=status.HTTP_200_OK
+        )
+
+#  Invite barber by manager:
+class InviteBarberView(APIView):
+    permission_classes = [IsAuthenticated, IsManager]
+
+    def post(self, request):
+        serializer = InviteBarberSerializer(
+            data=request.data,
+            context={"shop": get_active_shop(request.user)}  
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "آرایشگر با موفقیت دعوت شد."})
+
+# remove barber by manager:
+class RemoveBarberFromShopView(APIView):
+    permission_classes = [IsAuthenticated, IsManager]
+
+    def post(self, request, barber_id):
+        shop = get_active_shop(request.user)
+
+        try:
+            barber = BarberProfile.objects.select_related("user").get(
+                id=barber_id,
+                shop=shop
+            )
+        except BarberProfile.DoesNotExist:
+            return Response(
+                {"error": "آرایشگر در این آرایشگاه یافت نشد."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        now = timezone.now()
+        # 🔴 چک نوبت‌های باز
+        has_active_appointments = Appointment.objects.filter(
+            barber=barber.user,
+            shop=shop,
+            status__in=["pending", "confirmed"],
+            start_time__gte=now
+        ).exists()
+
+        if has_active_appointments:
+            return Response(
+                {
+                    "error": "BARBER_HAS_ACTIVE_APPOINTMENTS"
+                    # "detail": "این آرایشگر دارای نوبت‌های فعال یا انجام‌نشده است و امکان قطع همکاری وجود ندارد."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = RemoveBarberFromShopSerializer()
+        serializer.save(barber)
+
+        return Response(
+            {"detail": "آرایشگر با موفقیت از آرایشگاه حذف شد."},
             status=status.HTTP_200_OK
         )
 
 
+# Login----------------------------
+class CustomTokenObtainPairView(TokenObtainPairView):
+    print("login")
+    serializer_class = CustomTokenObtainPairSerializer
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def api_force_password_change(request):
-    if not request.user.must_change_password:
-        return Response({"detail": "تغییر رمز اجباری نیست."}, status=status.HTTP_400_BAD_REQUEST)
 
-    serializer = ForcePasswordChangeSerializer(data=request.data, context={'request': request})
-    if serializer.is_valid():
-        serializer.save()
-        request.user.must_change_password = False
-        request.user.save()
-        update_session_auth_hash(request, request.user)
-        return Response({"detail": "رمز شما با موفقیت تغییر یافت."}, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Manager----------------------------
+# api for web
 class ManagerProfileView(APIView):
     permission_classes = [IsAuthenticated, RoleRequired]
     allowed_roles = ['manager']
@@ -174,6 +276,7 @@ class ManagerProfileView(APIView):
 
         return Response(serializer.data)
 
+# api for web
 class EditManagerProfileView(APIView):
     parser_classes = (MultiPartParser, FormParser)
     permission_classes = [IsAuthenticated, RoleRequired]
@@ -370,7 +473,7 @@ class EditCustomerProfileAPIView(APIView):
         return Response(serializer.data)
 
 #-- show list of customers by manager:
-# views.py
+
 class CustomerListAPIView(APIView):
     permission_classes = [IsAuthenticated, RoleRequired]
     allowed_roles = ['manager']
@@ -419,3 +522,100 @@ class ToggleCustomerStatusAPIView(APIView):
             "customer_id": customer_id,
             "is_active": customer_shop.is_active
         }, status=status.HTTP_200_OK)
+
+# Mobile APIs ----------------------------
+
+# check validation token 
+class IsAuthView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """
+        بررسی اعتبار توکن و برگرداندن اطلاعات کاربر
+          """
+        print("LOGGGIN")
+        user = request.user
+        
+        serializer = IsProfileManagerSerializer(user)
+        return Response(
+            {
+                "status": 200,
+                "user": serializer.data
+            },
+            status=status.HTTP_200_OK
+        )
+
+# api for mobile
+class ManagerProfileApi(APIView):
+    permission_classes = [IsAuthenticated, RoleRequired]
+    allowed_roles = ['manager']
+    def get(self, request):
+        print("Get profile......")
+
+        user = request.user
+        profile = getattr(user, 'manager_profile', None)
+        shops = Shop.objects.filter(manager=user).count()
+
+        serializer = ManagerFullProfileApiSerializer({
+            "user": user,
+            "manager_profile": profile,
+            "shops": shops
+        }, context={"request": request})
+        print(f"Serializer Profile: {serializer.data}")
+        return Response(serializer.data)
+
+# api for mobile
+class ManagerProfileUpdateApi(APIView): # بروزرسانه درجای پروفایل-بروزرسانی نام/نام‌خانوادگی جدا
+    permission_classes = [IsAuthenticated, RoleRequired]
+    allowed_roles = ['manager']
+
+    def patch(self, request):
+        user = request.user
+        data = request.data
+
+        # ویرایش اطلاعات کاربر
+        user.phone = data.get('phone', user.phone)
+        user.email = data.get('email', user.email)
+        user.first_name = data.get('first_name', user.first_name)
+        user.last_name = data.get('last_name', user.last_name)
+        user.save()
+
+        # ویرایش بیو در پروفایل
+        profile = getattr(user, 'manager_profile', None)
+        if profile:
+            profile.bio = data.get('bio', profile.bio)
+            profile.save()
+
+        return Response({"success": True, "message": "پروفایل با موفقیت به‌روزرسانی شد"})
+
+# api for mobile
+class ManagerAvatarUpdateApi(APIView):
+    permission_classes = [IsAuthenticated, RoleRequired]
+    allowed_roles = ['manager']
+
+    def patch(self, request):
+        user = request.user
+        profile = getattr(user, 'manager_profile', None)
+        avatar = request.FILES.get('avatar')
+
+        if not avatar:
+            return Response({"error": "تصویر ارسال نشده است"}, status=400)
+
+        profile.avatar = avatar
+        profile.save()
+
+        serializer = ManagerProfileApiSerializer(profile, context={"request": request})
+        return Response({
+            "success": True,
+            "avatar_url": serializer.data["avatar_url"]
+        })
+
+# api for mobile
+class ChangePasswordView(APIView): 
+    permission_classes = [IsAuthenticated]
+    def patch(self, request):
+        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"detail": "گذرواژه با موفقیت تغییر یافت."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -44,10 +44,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    # 'extensions',
     'django_jalali',
     'apps.account',
-    'apps.salon',
+    'apps.salon', # خط مورد نظر
     'apps.payment',
 ]
 
@@ -70,6 +69,10 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+        "apps.account.permissions.ForcePasswordChangePermission",
+    ],
 }
 from datetime import timedelta
 

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Shop, Service, CustomerShop, Appointment
+from .models import Shop, Service, CustomerShop, Appointment, Province, City, District
 
 class ShopAdmin(admin.ModelAdmin):
     list_display = ('name', 'referral_code', 'manager', 'status')
@@ -27,7 +27,23 @@ class AppointmentAdmin(admin.ModelAdmin):
     # ordering = ('joined_at',)
 
 
+class ProvinceAdmin(admin.ModelAdmin):
+    list_display = ('id','name',)
+    search_fields = ('name',)
+
+class CityAdmin(admin.ModelAdmin):
+    list_display = ('id','name','province')
+    search_fields = ('name',)
+    
+class DistrictAdmin(admin.ModelAdmin):
+    list_display = ('id','name', 'city')
+    search_fields = ('name',)
+
 admin.site.register(Shop, ShopAdmin)
 admin.site.register(Service, ServiceAdmin)
 admin.site.register(CustomerShop, CustomerShopAdmin)
 admin.site.register(Appointment, AppointmentAdmin)
+
+admin.site.register(Province, ProvinceAdmin)
+admin.site.register(City, CityAdmin)
+admin.site.register(District, DistrictAdmin)

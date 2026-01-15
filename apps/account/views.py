@@ -181,26 +181,8 @@ def edit_manager_profile(request):
     if request.method == 'POST':
         form = ManagerProfileEditForm(request.POST, request.FILES, instance=profile, user=request.user)
         if form.is_valid():
-            # گرفتن نمونه اصلی ManagerProfile از دیتابیس برای آواتار قدیمی
-            try:
-                old_profile = ManagerProfile.objects.get(pk=profile.pk)
-                old_avatar = old_profile.avatar
-            except ManagerProfile.DoesNotExist:
-                old_avatar = None
-            
-            old_avatar_path = os.path.join(settings.MEDIA_ROOT, old_avatar.name)
-            # اگر فایل جدیدی آپلود شده و آواتار قدیمی وجود دارد
-            if 'avatar' in request.FILES and old_avatar:
-                old_avatar_path = os.path.join(settings.MEDIA_ROOT, old_avatar.name)
-                if os.path.exists(old_avatar_path):
-                    try:
-                        os.remove(old_avatar_path)
-                    except Exception as e:
-                        print(f"Error deleting old avatar: {e}")
-            # ذخیره فرم
             form.save()
-            form = ManagerProfileEditForm(instance=profile, user=request.user)
-            
+            form = ManagerProfileEditForm(instance=profile, user=request.user)            
             # رندر همان صفحه با فرم جدید و پیام
             return render(request, 'account/edit_manager_profile.html', {
                 'form': form,

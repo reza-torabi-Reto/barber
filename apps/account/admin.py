@@ -33,7 +33,7 @@ class ManagerProfileAdmin(admin.ModelAdmin):
     has_avatar.short_description = 'آواتار دارد؟'
 
 class BarberProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'shop', 'bio', 'has_avatar')
+    list_display = ('user', 'shop', 'bio','status_barber', 'has_avatar')
     list_filter = ('user__role', 'shop')
     search_fields = ('user__username', 'bio')
 

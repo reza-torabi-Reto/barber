@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 import uuid
 import os
 
@@ -12,7 +13,13 @@ def get_random_filename(instance, filename):
     random_filename = f"{uuid.uuid4()}.{ext}"
     return os.path.join('images/avatars/', random_filename)
 
-# account/models.py
+class BarberStatus(models.TextChoices):
+    INVITED = "invited", "Invited"
+    ACTIVE = "active", "Active"
+    SUSPENDED = "suspended", "Suspended"
+    LEFT = "left", "Left"
+
+
 class CustomUser(AbstractUser):
     ROLE_CHOICES = (
         ('manager', 'مدیر'),
@@ -37,30 +44,6 @@ class CustomUser(AbstractUser):
         verbose_name_plural = 'کاربران'
 
 
-
-class BarberProfileManager(models.Manager):
-    def active(self):
-        return self.select_related('user').filter(user__must_change_password=False)
-
-class BarberProfile(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='barber_profile')
-    status = models.BooleanField(default=True, verbose_name='وضعیت')
-    shop = models.ForeignKey('salon.Shop', on_delete=models.SET_NULL, null=True, blank=True, related_name='barber_shop')
-    avatar = models.ImageField(upload_to=get_random_filename, blank=True, null=True)
-    bio = models.TextField(blank=True, null=True)
-
-    objects = BarberProfileManager()  # ✅ این خط ضروریه
-    
-    def get_avatar_url(self):
-        """برگرداندن URL آواتار یا آواتار پیش‌فرض"""
-        if self.avatar:
-            return self.avatar.url
-
-    def __str__(self):
-        return f"{self.user.first_name} {self.user.last_name}"
-
-
-
 class ManagerProfile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='manager_profile')
     avatar = models.ImageField(upload_to=get_random_filename, blank=True, null=True)
@@ -73,6 +56,32 @@ class ManagerProfile(models.Model):
     def __str__(self):
         return f"{self.user.first_name} {self.user.last_name}"
     
+
+
+class BarberProfileManager(models.Manager):
+    def active(self):
+        return self.select_related('user').filter(user__must_change_password=False)
+
+class BarberProfile(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='barber_profile')
+    status = models.BooleanField(default=True, verbose_name='وضعیت') #قراره این فیلد به مرور جایگزین فیلد جدید بشه
+    status_barber = models.CharField(max_length=20,choices=BarberStatus.choices,default=BarberStatus.ACTIVE,verbose_name='وضعیت آرایشگر')
+    shop = models.ForeignKey('salon.Shop', on_delete=models.SET_NULL, null=True, blank=True, related_name='barber_shop')
+    avatar = models.ImageField(upload_to=get_random_filename, blank=True, null=True)
+    bio = models.TextField(blank=True, null=True)
+    invited_at = models.DateTimeField(null=True, blank=True)
+    objects = BarberProfileManager()  # ✅ این خط ضروریه
+    
+    def get_avatar_url(self):
+        """برگرداندن URL آواتار یا آواتار پیش‌فرض"""
+        if self.avatar:
+            return self.avatar.url
+
+    def __str__(self):
+        return f"{self.user.first_name} {self.user.last_name}"
+
+
+
 
 class CustomerProfile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='customer_profile')

@@ -1,6 +1,11 @@
 from django.db.models import Sum
 
 
+def get_active_shop(user):
+    """دریافت سالنی که برای مدیر فعال شده است."""
+    return user.managed_shops.filter(active=True).first()
+
+
 def get_total_service_duration(services):
     return services.aggregate(total=Sum('duration'))['total'] or 0
 
