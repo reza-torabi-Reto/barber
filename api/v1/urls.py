@@ -9,17 +9,16 @@ from rest_framework_simplejwt.views import (
 from rest_framework.routers import DefaultRouter
 router = DefaultRouter()
 
-#---------------
-# Mobile Roots:
-#---------------
 router.register(r'shop/services', ServiceViewSet, basename='service')##
 urlpatterns = [
+    #================ 
     # ACCOUNT
-    #---core Views:
+    #================
+    #=== core Views ===
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
-    #---Views:
+    #=== Views ===
     path('signup/<str:role>/send-otp/', SendOTPView.as_view()),##
     path('signup/verify-otp/', VerifyOTPView.as_view()),##
     path('signup/complete/', CompleteSignupView.as_view()),##
@@ -33,9 +32,12 @@ urlpatterns = [
     path('barber/<int:barber_id>/remove/', RemoveBarberFromShopView.as_view(), name='remove_barber'),##
     path('shops/<int:shop_id>/barber-schedule/<int:barber_id>/', BarberScheduleAPIView.as_view(), name='api_barber_schedule'),##
 
-    # SHOP
+    #================ 
+    # SALON
+    #================
     path('manager/profile/change-password/', ChangePasswordView.as_view(), name='change-password'),##
     path('appointments/bulk-update/', bulk_update_appointments, name='appointments-bulk-update'),##
+    path("manager/appointment/<int:pk>/change-status/",change_appointment_status, name="change_appointment_status"),
     path("notifications/has_unread/",has_unread_notifications, name="has_unread_notifications"),##    
     path("get-customers-active-salon/manager/",get_customers_of_active_salon_manager, name="get_customers_of_active_salon_manager"),##
     path('customers/bulk-update/', bulk_update_customers_status, name='bulk_update_customers_status'),##

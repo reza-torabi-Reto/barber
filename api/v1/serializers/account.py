@@ -11,14 +11,13 @@ from utils.salon_utils import get_active_shop
 from apps.account.models import *
 from apps.salon.models import *
 
-#----------------
-# Serilizers Mobile
-#----------------
+#========================
+# MANAGER ACCOUNT SERIALIZERS
+#========================
 
 User = get_user_model()
 
-#force change password:
-class ForceChangePasswordSerializer(serializers.Serializer): ###
+class ForceChangePasswordSerializer(serializers.Serializer): 
     password1 = serializers.CharField(write_only=True)
     password2 = serializers.CharField(write_only=True)
 
@@ -31,8 +30,7 @@ class ForceChangePasswordSerializer(serializers.Serializer): ###
         validate_password(data['password1'])
         return data
 
-#Self assign barber:
-class SelfAssignBarberSerializer(serializers.Serializer): ###
+class SelfAssignBarberSerializer(serializers.Serializer): 
     def save(self, user, shop):
         barber = getattr(user, "barber_profile", None)
 
@@ -64,18 +62,16 @@ class SelfAssignBarberSerializer(serializers.Serializer): ###
 
         return barber
     
-#-- Left managet from barber
-class LeaveBarberSerializer(serializers.Serializer): ###
+class LeaveBarberSerializer(serializers.Serializer): 
     def save(self, barber):
         barber.shop = None
         barber.status_barber = BarberStatus.LEFT
         barber.save(update_fields=["shop", "status_barber"])
         return barber
 
-#-- Invite barber by manager:
-class InviteBarberSerializer(serializers.Serializer): ###
+class InviteBarberSerializer(serializers.Serializer): 
     phone = serializers.CharField(max_length=15)
-    force = serializers.BooleanField(required=False, default=False)  # ⬅️ اضافه شد: کنترل دعوت مجدد با تأیید
+    force = serializers.BooleanField(required=False, default=False)  
 
     def validate_phone(self, value):
         if not value.isdigit():
@@ -87,7 +83,7 @@ class InviteBarberSerializer(serializers.Serializer): ###
 
     def save(self):
         phone = self.validated_data["phone"]
-        force = self.validated_data["force"]  # ⬅️ اضافه شد
+        force = self.validated_data["force"]  
         shop = self.context["shop"]
 
         temp_password = self.create_temp_password()
@@ -161,8 +157,8 @@ class InviteBarberSerializer(serializers.Serializer): ###
 
         raise serializers.ValidationError({"code": "UNKNOWN_ERROR"})
 
-#-- Remove barber by manager:
-class RemoveBarberFromShopSerializer(serializers.Serializer): ###
+
+class RemoveBarberFromShopSerializer(serializers.Serializer): 
     def save(self, barber):
         barber.services.update(is_active=False)
         barber.shop = None
@@ -170,14 +166,16 @@ class RemoveBarberFromShopSerializer(serializers.Serializer): ###
         barber.save(update_fields=["shop", "status_barber"])
         return barber
 
-#-- SignUp OTP Manager & Customer:
-class PhoneSerializer(serializers.Serializer): ###
+
+class PhoneSerializer(serializers.Serializer): 
     phone = serializers.RegexField(regex=r'^\d{10,15}$',error_messages={'invalid': 'شماره تلفن معتبر نیست.'})
 
-class OTPSerializer(serializers.Serializer): ###
+
+class OTPSerializer(serializers.Serializer): 
     otp_code = serializers.CharField(max_length=6, min_length=6)
 
-class BaseSignupSerializer(serializers.Serializer): ###
+
+class BaseSignupSerializer(serializers.Serializer): 
     first_name = serializers.CharField()
     last_name = serializers.CharField()
     email = serializers.EmailField(required=False)
@@ -223,7 +221,7 @@ class BaseSignupSerializer(serializers.Serializer): ###
 
         return user
 
-class CustomTokenObtainPairSerializer(TokenObtainPairSerializer): ###
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer): 
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
@@ -244,7 +242,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer): ###
         return data
 
 
-class IsProfileManagerSerializer(serializers.ModelSerializer): ###
+class IsProfileManagerSerializer(serializers.ModelSerializer): 
     active_shop_id = serializers.SerializerMethodField()
     barber_status = serializers.SerializerMethodField()
     barber_shop_id = serializers.SerializerMethodField()
@@ -273,7 +271,7 @@ class IsProfileManagerSerializer(serializers.ModelSerializer): ###
         barber = getattr(obj, "barber_profile", None)
         return barber.shop_id if barber and barber.shop else None
 
-class ManagerProfileApiSerializer(serializers.ModelSerializer): ###
+class ManagerProfileApiSerializer(serializers.ModelSerializer): 
     avatar_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -284,7 +282,7 @@ class ManagerProfileApiSerializer(serializers.ModelSerializer): ###
         return obj.avatar.url if obj.avatar else None
 
 
-class ManagerFullProfileApiSerializer(serializers.Serializer): ###
+class ManagerFullProfileApiSerializer(serializers.Serializer): 
     id = serializers.IntegerField(source="user.id")
     username = serializers.CharField(source="user.username")
     phone = serializers.CharField(source="user.phone")
@@ -305,7 +303,7 @@ class ManagerFullProfileApiSerializer(serializers.Serializer): ###
         return j_convert_appoiment(user.date_joined)
 
 
-class ChangePasswordSerializer(serializers.Serializer): ###
+class ChangePasswordSerializer(serializers.Serializer): 
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True, validators=[validate_password])
     confirm_password = serializers.CharField(required=True)

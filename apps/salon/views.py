@@ -20,7 +20,7 @@ from utils.notification_utils  import message_nitif
 from utils.date_utils import j_convert_appoiment
 from utils.salon_utils import get_total_service_duration
 from .forms import ShopForm, ServiceForm, AppointmentService, ShopEditForm, BarberScheduleFormSet
-from .models import Shop, BarberSchedule,Service, CustomerShop, ShopSchedule, Appointment, Notification
+from .models import Shop, BarberSchedule,Service, CustomerShop, ShopSchedule, Appointment, Notification,AppointmentStatus
 
 from services.appointment import find_available_time_slots
 
@@ -427,6 +427,39 @@ def barber_appointments(request, shop_id):
         'now': timezone.now(),
     })
 
+
+@login_required
+def get_unread_notifications(request):
+    notifications = request.user.notifications.filter(is_read=False).order_by('-created_at')
+    print(f"Notifi : {notifications}")
+    data = []
+    for noti in notifications:
+        data.append({
+            'id': noti.id,
+            'message': noti.message,
+            'created_at': timesince(noti.created_at) + ' پیش',
+            'url': noti.url if noti.url else '',
+        })
+
+    return JsonResponse({'notifications': data})
+
+
+@login_required
+@require_POST
+def mark_as_read(request):
+    try:
+        data = json.loads(request.body)
+        notif_id = data.get('id')
+        notification = get_object_or_404(Notification, id=notif_id, user=request.user)
+        notification.is_read = True
+        notification.save()
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    
+
+# ================ Customer Section ================
+
 @login_required
 @role_required(['customer'])
 def appointment_detail_customer(request, id):
@@ -457,7 +490,6 @@ def appointment_detail_customer(request, id):
 
     return render(request, 'salon/appointment_detail_customer.html', {'appointment': appointment, 'now': timezone.now(),})
 
-# ================ Customer Section ================
 # صفحه تایید نوبت توسط مشتری
 @login_required
 @role_required(['customer'])
@@ -493,7 +525,9 @@ def confirm_appointment(request):
             barber=barber,
             start_time=start_time,
             end_time=end_time,
-            status='pending'
+            # status='pending',
+            status=AppointmentStatus.CONFIRMED
+            
         )
         appointment.save()
         for service in services:
@@ -710,33 +744,3 @@ def shop_detail(request, shop_id):
         'shop_customer': shop_customer,
         'barbers': barbers,
     })
-
-
-@login_required
-def get_unread_notifications(request):
-    notifications = request.user.notifications.filter(is_read=False).order_by('-created_at')
-    print(f"Notifi : {notifications}")
-    data = []
-    for noti in notifications:
-        data.append({
-            'id': noti.id,
-            'message': noti.message,
-            'created_at': timesince(noti.created_at) + ' پیش',
-            'url': noti.url if noti.url else '',
-        })
-
-    return JsonResponse({'notifications': data})
-
-
-@login_required
-@require_POST
-def mark_as_read(request):
-    try:
-        data = json.loads(request.body)
-        notif_id = data.get('id')
-        notification = get_object_or_404(Notification, id=notif_id, user=request.user)
-        notification.is_read = True
-        notification.save()
-        return JsonResponse({'status': 'success'})
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)

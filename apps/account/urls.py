@@ -40,10 +40,12 @@ urlpatterns = [
     path('edit-barber-profile/', edit_barber_profile, name='edit_barber_profile'),
     path('barber/<int:barber_id>/toggle/<int:shop_id>/', toggle_barber_status, name='toggle_barber_status'),
     path('customers/<int:shop_id>/', customer_list, name='customer_list'),
-    path('customer-profile/', customer_profile, name='customer_profile'),
-    path('edit-customer-profile/', edit_customer_profile, name='edit_customer_profile'),
     path('customer/toggle/<int:customer_id>/<int:shop_id>/', toggle_customer_status, name='toggle_customer_status'),
 
+    
+    # customer:
+    path('customer-profile/', customer_profile, name='customer_profile'),
+    path('edit-customer-profile/', edit_customer_profile, name='edit_customer_profile'),
     path('join-shop/<int:shop_id>/', join_shop, name='join_shop'),
     path('leave-shop/<int:shop_id>/', leave_shop, name='leave_shop'),
 

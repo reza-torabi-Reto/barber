@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import Q
+from django.db import transaction
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
@@ -14,27 +15,26 @@ from rest_framework import status
 import jdatetime
 from apps.account.permissions import *
 from apps.account.models import BarberStatus
-from apps.salon.models import Shop, Service, BarberSchedule, CustomerShop,Appointment
+from apps.salon.models import Shop, Service, BarberSchedule, CustomerShop,Appointment,AppointmentStatus
 from apps.account.models import CustomUser,BarberProfile
 from api.v1.serializers.salon import *
 from utils.date_utils import j_convert_appoiment
 from utils.salon_utils import get_active_shop
 
-#-----------------
-# APIs Mobile
-#-----------------
+
+#========================
+# MANAGER SALON VIEWS
+#========================
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def has_unread_notifications(request): ###    
+def has_unread_notifications(request): 
     has_unread = request.user.notifications.filter(is_read=False).exists()
     return Response({'has_unread': has_unread})
 
 @api_view(['GET'])
-def get_customers_of_active_salon_manager(request): ###
-    active_shop = Shop.objects.filter(manager=request.user, active=True).first()
-    if not active_shop:
-        return Response({'detail': 'هیچ آرایشگاه فعالی پیدا نشد.'}, status=404)
+def get_customers_of_active_salon_manager(request): 
+    active_shop = get_active_shop(request.user) 
 
     search_query = request.GET.get("q", "").strip()
     
@@ -52,13 +52,11 @@ def get_customers_of_active_salon_manager(request): ###
     serializer = CustomerOfSalonSerializer(customer_shops, many=True)
     return Response({"customers": serializer.data})
 
-# update status group customers
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def bulk_update_customers_status(request): ###
-    active_shop = Shop.objects.filter(manager=request.user, active=True).first()
-    if not active_shop:
-        return Response({'detail': 'هیچ آرایشگاه فعالی پیدا نشد.'}, status=404)
+def bulk_update_customers_status(request): 
+    active_shop = get_active_shop(request.user) 
 
     customer_ids = request.data.get('customer_ids', [])
     is_active = request.data.get('is_active', None)
@@ -75,10 +73,10 @@ def bulk_update_customers_status(request): ###
         'updated_count': updated_count
     }, status=200)
 
-# update status one customer
+
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
-def update_customer_status(request, customer_id): ###
+def update_customer_status(request, customer_id): 
     active_shop = get_active_shop(request.user) 
 
     membership = CustomerShop.objects.filter(
@@ -103,30 +101,116 @@ def update_customer_status(request, customer_id): ###
     }, status=200)
 
 
+
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def bulk_update_appointments(request):
+
+#     active_shop = get_active_shop(request.user)
+
+#     appointment_ids = request.data.get("appointment_ids", [])
+#     new_status = request.data.get("status")
+#     print(f"New Status: {new_status}")
+#     try:
+#         new_status_enum = AppointmentStatus(new_status)
+#     except ValueError:
+#         return Response({"detail": "وضعیت معتبر نیست"}, status=400)
+
+#     appointments = Appointment.objects.filter(
+#         id__in=appointment_ids,
+#         shop=active_shop
+#     )
+
+#     success_ids = []
+#     failed_ids = []
+
+#     for app in appointments:
+
+#         try:
+#             with transaction.atomic():
+#                 locked_app = Appointment.objects.select_for_update().get(
+#                     pk=app.pk
+#                 )
+#                 locked_app.transition_to(new_status_enum)
+#                 success_ids.append(app.id)
+                
+#         except Exception:
+#             failed_ids.append(app.id)
+    
+#     return Response({
+#         "failed_ids": failed_ids,
+#         "updated_ids": success_ids,
+#         "failed_count": len(failed_ids),
+#         "updated_count": len(success_ids)
+#     })
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def bulk_update_appointments(request): ###
-    active_shop = Shop.objects.filter(manager=request.user, active=True).first()
-    if not active_shop:
-        return Response({"detail": "آرایشگاه فعالی یافت نشد."}, status=404)
+def bulk_update_appointments(request):
+
+    active_shop = get_active_shop(request.user)
 
     appointment_ids = request.data.get("appointment_ids", [])
     new_status = request.data.get("status")
-    if not isinstance(appointment_ids, list) or new_status not in ["pending", "confirmed", "completed", "canceled"]:
-        return Response({"detail": "داده‌های ارسالی معتبر نیستند."}, status=400)
+    print(f'Status: {new_status}')
 
-    updated = Appointment.objects.filter(
-        id__in=appointment_ids,
-        shop=active_shop
-    ).update(status=new_status)
+    try:
+        new_status_enum = AppointmentStatus(new_status)
+        print(f'Enum: {new_status_enum}')
+    except ValueError:
+        return Response({"detail": "وضعیت معتبر نیست"}, status=400)
+
+    success_ids = []
+    failed_ids = []
+
+    with transaction.atomic():
+
+        appointments = (
+            Appointment.objects
+            .select_for_update()
+            .filter(id__in=appointment_ids, shop=active_shop)
+        )
+
+        for app in appointments:
+            try:
+                app.transition_to(new_status_enum, actor=request.user)
+                success_ids.append(app.id)
+            except Exception:
+                failed_ids.append(app.id)
 
     return Response({
-        "updated_count": updated,
-        "message": "وضعیت نوبت‌ها بروزرسانی شد.",
-    }, status=200)
+        "failed_ids": failed_ids,
+        "updated_ids": success_ids,
+        "failed_count": len(failed_ids),
+        "updated_count": len(success_ids)
+    })
 
 
-class CustomerProfileDetailView(APIView): ###
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def change_appointment_status(request, pk):
+    active_shop = get_active_shop(request.user)
+    new_status = request.data.get("status")
+    try:
+        new_status_enum = AppointmentStatus(new_status)
+    except ValueError:
+        return Response({"detail": "وضعیت معتبر نیست"}, status=400)
+
+    try:
+        with transaction.atomic():
+            appointment = Appointment.objects.select_for_update().get(pk=pk,shop=active_shop)
+            appointment.transition_to(new_status_enum,actor=request.user)
+        return Response({"detail": "وضعیت با موفقیت تغییر کرد"})
+
+    except Appointment.DoesNotExist:
+        return Response({"detail": "نوبت پیدا نشد"}, status=404)
+
+    except ValueError as e:
+        return Response({"detail": str(e)}, status=400)
+
+
+class CustomerProfileDetailView(APIView): 
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
@@ -180,12 +264,13 @@ class CustomerProfileDetailView(APIView): ###
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def manager_appointments_api(request): ###
+def manager_appointments_api(request): 
 
     active_shop = get_active_shop(request.user)
 
     j_date_str = request.GET.get("date")
     status_filter = request.GET.get("status")
+    # print(f"Status= {status_filter}")
     search = request.GET.get("search", "").strip()
     barber_id = request.GET.get("barber")
     
@@ -204,8 +289,22 @@ def manager_appointments_api(request): ###
     # ----------------
     # فیلتر وضعیت نوبت
     # ----------------
-    if status_filter in ["pending", "confirmed", "completed", "canceled"]:
-        base_qs = base_qs.filter(status=status_filter)
+    now = timezone.localtime()
+    if status_filter in ["pending","pending_expire", "confirmed","confirmed_expire", "completed", "canceled","missed"]:
+        if status_filter=="pending":
+            base_qs = base_qs.filter(status="pending",start_time__gt=now )    
+            # print(f"base_qs pending = {base_qs}, now= {str(now)}")
+        elif status_filter=="pending_expire":
+            base_qs = base_qs.filter(status="pending",start_time__lt=now )  
+            # print(f"base_qs pending_expire = {base_qs}, now= {str(now)}")
+        elif status_filter=="confirmed":
+            base_qs = base_qs.filter(status="confirmed",start_time__gt=now )
+            # print(f"base_qs confirmed = {base_qs}, now= {str(now)}")
+        elif status_filter=="confirmed_expire":
+            base_qs = base_qs.filter(status="confirmed",start_time__lt=now )      
+            # print(f"base_qs confirmed_expire = {base_qs}, now= {str(now)}")
+        else:
+            base_qs = base_qs.filter(status=status_filter)
 
     # ----------------
     # فیلتر آرایشگر
@@ -229,7 +328,7 @@ def manager_appointments_api(request): ###
     })
 
 
-class AppointmentDetailAPIView(RetrieveAPIView): ###
+class AppointmentDetailAPIView(RetrieveAPIView): 
     queryset = Appointment.objects.select_related(
         "customer", "barber", "shop"
     ).prefetch_related(
@@ -237,12 +336,16 @@ class AppointmentDetailAPIView(RetrieveAPIView): ###
     )
     serializer_class = AppointmentDetailSerializer
     permission_classes = [IsAuthenticated]
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["request"] = self.request
+        return context
 
 
 # get barbers of active salon
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def manager_barbers_api(request): ###
+def manager_barbers_api(request): 
     
     active_shop = get_active_shop(request.user)
     barbers = BarberProfile.objects.filter(shop=active_shop).exclude(status_barber=BarberStatus.INVITED).select_related("user")
@@ -257,8 +360,8 @@ def manager_barbers_api(request): ###
 
     return Response({"barbers": data}, status=200)
 
-# SalonTab
-class HasActiveSalonAPIView(APIView):  ###
+
+class HasActiveSalonAPIView(APIView):  
     permission_classes = [IsAuthenticated]
     def get(self, request):
         shop = get_active_shop(request.user)
@@ -271,7 +374,7 @@ class HasActiveSalonAPIView(APIView):  ###
             "has_active_salon": salon
         })
 
-class ShopSummaryAPIView(APIView): ###
+class ShopSummaryAPIView(APIView): 
     permission_classes = [IsAuthenticated]
     def get(self, request):
 
@@ -282,7 +385,7 @@ class ShopSummaryAPIView(APIView): ###
         return Response(serializer.data)
 
 
-class ShopDetailAPIView(APIView): ###
+class ShopDetailAPIView(APIView): 
     permission_classes = [IsAuthenticated, IsManager]
     def get(self, request):
         shop = get_active_shop(request.user)
@@ -292,7 +395,7 @@ class ShopDetailAPIView(APIView): ###
         return Response(serializer.data)
 
 
-class BarberListAPIView(APIView): ###
+class BarberListAPIView(APIView): 
     permission_classes = [IsAuthenticated,IsManager]
 
     def get(self, request):
@@ -304,7 +407,7 @@ class BarberListAPIView(APIView): ###
         serializer = BarberListSerializer(barbers, many=True)
         return Response(serializer.data)
 
-class BarberListAddServiceAPIView(APIView): ###
+class BarberListAddServiceAPIView(APIView): 
     permission_classes = [IsAuthenticated,IsManager]
 
     def get(self, request):
@@ -317,7 +420,7 @@ class BarberListAddServiceAPIView(APIView): ###
         return Response(serializer.data)
 
 
-class ServiceViewSet(ModelViewSet): ###
+class ServiceViewSet(ModelViewSet): 
     permission_classes = [IsAuthenticated,IsManager]
     def get_queryset(self):
         shop = get_active_shop(self.request.user)
@@ -356,8 +459,8 @@ class ServiceViewSet(ModelViewSet): ###
         service.save(update_fields=["is_active"])
         return Response({"detail": "Service deactivated"})
 
-# update fields shop
-class ShopUpdateAPIView(APIView): ###
+
+class ShopUpdateAPIView(APIView): 
     permission_classes = [IsAuthenticated]
 
     def patch(self, request):
@@ -367,7 +470,8 @@ class ShopUpdateAPIView(APIView): ###
         serializer.save()
         return Response(serializer.data)
 
-class ShopLogoUpdateAPIView(APIView): ###
+
+class ShopLogoUpdateAPIView(APIView): 
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
@@ -378,7 +482,7 @@ class ShopLogoUpdateAPIView(APIView): ###
         serializer.save()
         return Response({"logo": serializer.data["logo"]})
 
-class UpdateShopImage(APIView): ###
+class UpdateShopImage(APIView): 
     def patch(self, request):
         shop = get_active_shop(request.user)
         serializer = ShopImageSerializer(shop, data=request.data, partial=True)
@@ -386,7 +490,7 @@ class UpdateShopImage(APIView): ###
         serializer.save()
         return Response({"image_shop": serializer.data["image_shop"]})
     
-class GetShopDetails(APIView): ###
+class GetShopDetails(APIView): 
     def get(self, request):
         shop = get_active_shop(request.user)
         if not shop:
@@ -399,7 +503,7 @@ class GetShopDetails(APIView): ###
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 # set scheduls works barbers
-class BarberScheduleAPIView(APIView): ###
+class BarberScheduleAPIView(APIView): 
     permission_classes = [IsAuthenticated]
 
     def get(self, request, barber_id):
@@ -441,15 +545,15 @@ class BarberScheduleAPIView(APIView): ###
 
         return Response({"detail": "Schedule updated successfully"})
 
-# get info barber
-class BarberProfileDetailAPIView(RetrieveAPIView): ###
+
+class BarberProfileDetailAPIView(RetrieveAPIView): 
     queryset = BarberProfile.objects.select_related("user")
     serializer_class = BarberProfileDetailSerializer
     permission_classes = [IsAuthenticated]
     lookup_field = "id"
 
 
-class BarberStatusUpdateAPIView(APIView): ###
+class BarberStatusUpdateAPIView(APIView): 
     permission_classes = [IsAuthenticated, IsManager]
 
     def patch(self, request, barber_id):
@@ -471,25 +575,8 @@ class BarberStatusUpdateAPIView(APIView): ###
             "status_barber": barber.status_barber
         })
 
-# get list provinces and cities:
-class ProvinceListView(APIView): ###
-    permission_classes = [AllowAny]
 
-    def get(self, request):
-        provinces = Province.objects.all().order_by("name")
-        serializer = ProvinceSerializer(provinces, many=True)
-        return Response(serializer.data)
-    
-class CityListView(APIView): ###
-    permission_classes = [AllowAny]
-
-    def get(self, request, province_id):
-        cities = City.objects.filter(province_id=province_id).order_by("name")
-        serializer = CitySerializer(cities, many=True)
-        return Response(serializer.data)
-
-# create shop:
-class ShopCreateView(APIView): ###
+class ShopCreateView(APIView): 
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -512,4 +599,20 @@ class ShopCreateView(APIView): ###
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+# get list provinces:
+class ProvinceListView(APIView): 
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        provinces = Province.objects.all().order_by("name")
+        serializer = ProvinceSerializer(provinces, many=True)
+        return Response(serializer.data)
+
+# get list cities:
+class CityListView(APIView): 
+    permission_classes = [AllowAny]
+    def get(self, request, province_id):
+        cities = City.objects.filter(province_id=province_id).order_by("name")
+        serializer = CitySerializer(cities, many=True)
+        return Response(serializer.data)
 

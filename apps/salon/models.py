@@ -3,6 +3,8 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.db.models import Q, UniqueConstraint
 from django.urls import reverse
+from django.utils import timezone
+from datetime import  timedelta
 
 import uuid
 import os
@@ -136,23 +138,124 @@ class CustomerShop(models.Model):
         return f"{self.customer.username} در {self.shop.name}"
 
 
-class Appointment(models.Model):
-    STATUS_CHOICES = (
-        ('pending', 'در انتظار'),
-        ('confirmed', 'تأیید شده'),
-        ('canceled', 'لغو شده'),
-        ('completed', 'تکمیل شده'),
-    )
+# class AppointmentStatus(models.TextChoices):
+#     PENDING = "pending", "بی‌پاسخ"
+#     CONFIRMED = "confirmed", "پذیرفته‌شده"
+#     CANCELED = "canceled", "لغو شده"
+#     COMPLETED = "completed", "انجام شده"
+#     MISSED = "missed", "انجام نشده"
 
-    customer = models.ForeignKey('account.CustomUser', on_delete=models.CASCADE, related_name='appointments')
-    shop = models.ForeignKey('Shop', on_delete=models.CASCADE, related_name='appointments')
-    barber = models.ForeignKey('account.CustomUser', on_delete=models.CASCADE, related_name='barber_appointments')
+# class Appointment(models.Model):
+    
+#     customer = models.ForeignKey('account.CustomUser', on_delete=models.CASCADE, related_name='appointments')
+#     shop = models.ForeignKey('Shop', on_delete=models.CASCADE, related_name='appointments')
+#     barber = models.ForeignKey('account.CustomUser', on_delete=models.CASCADE, related_name='barber_appointments')
+#     start_time = models.DateTimeField()
+#     end_time = models.DateTimeField()
+#     status = models.CharField(max_length=20,choices=AppointmentStatus.choices,default=AppointmentStatus.PENDING)
+#     canceled_by = models.CharField(max_length=10,choices=[('customer', 'مشتری'),('manager', 'مدیر'),],null=True, blank=True,verbose_name='لغوکننده')
+#     created_at = models.DateTimeField(auto_now_add=True)
+
+#     canceled_by_user = models.ForeignKey('account.CustomUser',null=True,blank=True,on_delete=models.SET_NULL,related_name='canceled_appointments')
+#     status_updated_by = models.ForeignKey('account.CustomUser',null=True,blank=True,on_delete=models.SET_NULL,related_name='status_updates')
+#     status_updated_at = models.DateTimeField(null=True, blank=True)
+    
+#     class Meta:
+#         constraints = [
+#             UniqueConstraint(
+#                 fields=['barber', 'start_time'],
+#                 condition=~Q(status='canceled'),
+#                 name='unique_barber_start_time_active'
+#             )
+#         ]
+
+
+#     @property
+#     def is_expired(self):
+#         if self.status not in ['pending', 'confirmed']:
+#             return False
+
+#         now = timezone.localtime()
+
+#         if self.start_time < now:
+#             return True
+
+#         return False
+
+#     def get_allowed_transitions(self):
+
+#         if self.status == AppointmentStatus.PENDING:
+#             if self.is_expired:
+#                 return [
+#                     AppointmentStatus.COMPLETED,
+#                     AppointmentStatus.MISSED
+#                 ]
+#             return [
+#                 AppointmentStatus.CONFIRMED,
+#                 AppointmentStatus.CANCELED
+#             ]
+
+#         if self.status == AppointmentStatus.CONFIRMED:
+#             if self.is_expired:
+#                 return [
+#                     AppointmentStatus.COMPLETED,
+#                     AppointmentStatus.MISSED
+#                 ]
+#             return [AppointmentStatus.CANCELED]
+
+#         return []
+
+#     def can_transition_to(self, new_status):
+#         return new_status in self.get_allowed_transitions()
+
+#     def transition_to(self, new_status, *, canceled_by=None): #خطا ازین بخشه
+#         if not self.can_transition_to(new_status):
+#             raise ValidationError(
+#                 f"Cannot transition from {self.status} to {new_status}"
+#             )
+
+#         if new_status == AppointmentStatus.CANCELED:
+#             self.canceled_by = canceled_by
+
+#         self.status = new_status
+#         self.save(update_fields=["status", "canceled_by"])
+
+#     def can_cancel(self):
+#         if self.status not in [
+#             AppointmentStatus.PENDING,
+#             AppointmentStatus.CONFIRMED
+#         ]:
+#             return False
+    
+#         now = timezone.localtime()
+#         cancel_deadline = self.start_time - timedelta(hours=1)
+    
+#         return now < cancel_deadline
+
+#     def __str__(self):
+#         return f"{self.customer.username} - Appointment with {self.barber.username} at {self.start_time}"    
+
+
+class AppointmentStatus(models.TextChoices):
+    PENDING = "pending", "بی‌پاسخ"
+    CONFIRMED = "confirmed", "پذیرفته‌شده"
+    CANCELED = "canceled", "لغو شده"
+    COMPLETED = "completed", "انجام شده"
+    MISSED = "missed", "انجام نشده"
+
+
+class Appointment(models.Model):
+
+    customer = models.ForeignKey( 'account.CustomUser', on_delete=models.CASCADE, related_name='appointments')
+    shop = models.ForeignKey('Shop',on_delete=models.CASCADE,related_name='appointments')
+    barber = models.ForeignKey('account.CustomUser',on_delete=models.CASCADE,related_name='barber_appointments')
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    canceled_by = models.CharField(max_length=10,choices=[('customer', 'مشتری'),('manager', 'مدیر'),],null=True, blank=True,verbose_name='لغوکننده')
+    status = models.CharField(max_length=20,choices=AppointmentStatus.choices,default=AppointmentStatus.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    canceled_by_user = models.ForeignKey('account.CustomUser',null=True,blank=True,on_delete=models.SET_NULL,related_name='canceled_appointments')
+    status_updated_by = models.ForeignKey('account.CustomUser',null=True,blank=True,on_delete=models.SET_NULL,related_name='status_updates')
+    status_updated_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         constraints = [
@@ -163,9 +266,124 @@ class Appointment(models.Model):
             )
         ]
 
+    # -----------------------------
+    # TIME STATE
+    # -----------------------------
+
+    @property
+    def is_past(self):
+        return self.start_time < timezone.localtime()
+
+    # -----------------------------
+    # ROLE-BASED TRANSITIONS
+    # -----------------------------
+
+    def get_allowed_transitions(self, actor):
+
+        if actor.role == "customer":
+
+            if actor != self.customer:
+                return []
+
+            if self.status in [
+                AppointmentStatus.PENDING,
+                AppointmentStatus.CONFIRMED
+            ] and self.can_cancel():
+                return [AppointmentStatus.CANCELED]
+
+            return []
+
+        if actor.role == "manager":
+
+            if self.status == AppointmentStatus.PENDING:
+                if self.is_past:
+                    return [AppointmentStatus.MISSED]
+                return [
+                    AppointmentStatus.CONFIRMED,
+                    AppointmentStatus.CANCELED
+                ]
+
+            if self.status == AppointmentStatus.CONFIRMED:
+                if self.is_past:
+                    return [
+                        AppointmentStatus.COMPLETED,
+                        AppointmentStatus.MISSED
+                    ]
+                else:
+                    if self.can_cancel():
+                        return [AppointmentStatus.CANCELED]
+
+            return []
+
+        if actor.role == "barber":
+
+            if actor != self.barber:
+                return []
+
+            if (
+                self.status == AppointmentStatus.CONFIRMED
+                and self.is_past
+            ):
+                return [
+                    AppointmentStatus.COMPLETED,
+                    AppointmentStatus.MISSED
+                ]
+
+            return []
+
+        return []
+
+    # -----------------------------
+    # TRANSITION LOGIC
+    # -----------------------------
+
+    def transition_to(self, new_status, *, actor):
+
+        allowed = self.get_allowed_transitions(actor)
+        print(f'Allow: {allowed}')
+        if new_status not in allowed:
+            raise ValidationError(
+                f"Transition from {self.status} to {new_status} not allowed for {actor.role}"
+            )
+
+        self.status = new_status
+        self.status_updated_by = actor
+        self.status_updated_at = timezone.now()
+
+        if new_status == AppointmentStatus.CANCELED:
+            self.canceled_by_user = actor
+
+        self.save(
+            update_fields=[
+                "status",
+                "status_updated_by",
+                "status_updated_at",
+                "canceled_by_user"
+            ]
+        )
+
+    # -----------------------------
+    # CANCEL RULE
+    # -----------------------------
+
+    def can_cancel(self):
+
+        if self.status not in [
+            AppointmentStatus.PENDING,
+            AppointmentStatus.CONFIRMED
+        ]:
+            return False
+
+        cancel_deadline = self.start_time - timedelta(hours=1)
+
+        return timezone.localtime() < cancel_deadline
 
     def __str__(self):
-        return f"{self.customer.username} - Appointment with {self.barber.username} at {self.start_time}"    
+        return (
+            f"{self.customer.username} - "
+            f"{self.barber.username} - "
+            f"{self.start_time}"
+        )
 
 
 class AppointmentService(models.Model):

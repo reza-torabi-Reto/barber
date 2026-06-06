@@ -12,12 +12,14 @@ from api.v1.serializers.account import *
 from utils.salon_utils import get_active_shop
 from utils.auth_utils import RoleRequired
 
-#-------------------
-#APIs Mobile
-#-------------------
+
+#========================
+# MANAGER ACCOUNT VIEWS
+#========================
+
 User = get_user_model()
 
-class ForceChangePasswordView(APIView): ###
+class ForceChangePasswordView(APIView): 
     permission_classes = [ForcePasswordChangePermission,IsAuthenticated]
 
     def post(self, request):
@@ -44,7 +46,7 @@ class ForceChangePasswordView(APIView): ###
         )
 
 
-class SendOTPView(APIView): ###
+class SendOTPView(APIView): 
     def post(self, request, role):
         serializer = PhoneSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -55,13 +57,13 @@ class SendOTPView(APIView): ###
         otp = str(random.randint(100000, 999999))
         request.session['otp_code'] = otp
         request.session['otp_phone'] = phone
-        request.session['otp_role'] = role #!!!
+        request.session['otp_role'] = role 
         print(f"OTP for {phone}: {otp}")
 
         return Response({"detail": "کد تایید ارسال شد"}, status=201)
 
 
-class VerifyOTPView(APIView): ###
+class VerifyOTPView(APIView): 
     def post(self, request):
         if 'otp_phone' not in request.session:
             return Response({"detail": "لطفاً ابتدا شماره تلفن را ارسال کنید"}, status=400)
@@ -77,7 +79,7 @@ class VerifyOTPView(APIView): ###
         return Response({'error': 'کد تأیید نادرست است.'}, status=400)
 
 
-class CompleteSignupView(APIView): ###
+class CompleteSignupView(APIView): 
     def post(self, request):
         if not request.session.get('otp_verified'):
             return Response({'error': 'مراحل قبلی تأیید نشده‌اند.'}, status=400)
@@ -100,7 +102,7 @@ class CompleteSignupView(APIView): ###
         }, status=201)
 
 
-class SelfAssignBarberView(APIView): ###
+class SelfAssignBarberView(APIView): 
     permission_classes = [IsAuthenticated, IsManager]
 
     def post(self, request):
@@ -131,7 +133,7 @@ class SelfAssignBarberView(APIView): ###
             status=status.HTTP_200_OK
         )
 
-class SelfLeaveBarber(APIView): ###
+class SelfLeaveBarber(APIView): 
     permission_classes = [IsAuthenticated, IsManager]
 
     def post(self, request):
@@ -157,7 +159,7 @@ class SelfLeaveBarber(APIView): ###
         )
 
 
-class InviteBarberView(APIView): ###
+class InviteBarberView(APIView): 
     permission_classes = [IsAuthenticated, IsManager]
 
     def post(self, request):
@@ -170,7 +172,7 @@ class InviteBarberView(APIView): ###
         return Response({"detail": "آرایشگر با موفقیت دعوت شد."})
 
 
-class RemoveBarberFromShopView(APIView): ###
+class RemoveBarberFromShopView(APIView): 
     permission_classes = [IsAuthenticated, IsManager]
 
     def post(self, request, barber_id):
@@ -212,13 +214,11 @@ class RemoveBarberFromShopView(APIView): ###
         )
 
 
-# Login
-class CustomTokenObtainPairView(TokenObtainPairView): ###
-
+# login
+class CustomTokenObtainPairView(TokenObtainPairView): 
     serializer_class = CustomTokenObtainPairSerializer
 
-# check validation token 
-class IsAuthView(APIView): ###
+class IsAuthView(APIView): 
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -234,7 +234,7 @@ class IsAuthView(APIView): ###
         )
 
 
-class ManagerProfileApi(APIView): ###
+class ManagerProfileApi(APIView): 
     permission_classes = [IsAuthenticated, RoleRequired]
     allowed_roles = ['manager']
     def get(self, request):
@@ -250,7 +250,7 @@ class ManagerProfileApi(APIView): ###
         return Response(serializer.data)
 
 
-class ManagerProfileUpdateApi(APIView):  ###
+class ManagerProfileUpdateApi(APIView):  
     permission_classes = [IsAuthenticated, RoleRequired]
     allowed_roles = ['manager']
 
@@ -271,7 +271,7 @@ class ManagerProfileUpdateApi(APIView):  ###
         return Response({"success": True, "message": "پروفایل با موفقیت به‌روزرسانی شد"})
 
 
-class ManagerAvatarUpdateApi(APIView): ###
+class ManagerAvatarUpdateApi(APIView): 
     permission_classes = [IsAuthenticated, RoleRequired]
     allowed_roles = ['manager']
 
@@ -293,7 +293,7 @@ class ManagerAvatarUpdateApi(APIView): ###
         })
 
 
-class ChangePasswordView(APIView):  ###
+class ChangePasswordView(APIView):  
     permission_classes = [IsAuthenticated]
     def patch(self, request):
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
@@ -302,7 +302,7 @@ class ChangePasswordView(APIView):  ###
             return Response({"detail": "گذرواژه با موفقیت تغییر یافت."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class MeView(APIView): ###
+class MeView(APIView): 
     permission_classes = [IsAuthenticated]
 
     def get(self, request):

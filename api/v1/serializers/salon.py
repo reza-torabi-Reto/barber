@@ -7,11 +7,11 @@ from utils.date_utils import j_convert_appoiment
 from apps.account.models import BarberProfile
 from apps.salon.models import *
 
-#----------------
-# Serializers Mobile
-#----------------
+#========================
+# MANAGER SALON SERIALIZERS
+#========================
 
-class CustomerOfSalonSerializer(serializers.ModelSerializer): ###
+class CustomerOfSalonSerializer(serializers.ModelSerializer): 
     id = serializers.IntegerField(source='customer.id')
     name = serializers.SerializerMethodField()
     phone = serializers.CharField(source='customer.phone')
@@ -19,8 +19,8 @@ class CustomerOfSalonSerializer(serializers.ModelSerializer): ###
     last_name = serializers.CharField(source='customer.last_name')
     is_active = serializers.BooleanField()
     joined_at = serializers.SerializerMethodField()
-    joined_at_gregorian = serializers.DateTimeField(source='joined_at', read_only=True)  # تاریخ اصلی میلادی
-    total_appointments = serializers.SerializerMethodField()  # تعداد نوبت‌ها
+    joined_at_gregorian = serializers.DateTimeField(source='joined_at', read_only=True)  
+    total_appointments = serializers.SerializerMethodField()  
 
     class Meta:
         model = CustomerShop
@@ -37,11 +37,10 @@ class CustomerOfSalonSerializer(serializers.ModelSerializer): ###
     def get_total_appointments(self, obj):
         return Appointment.objects.filter(
         customer=obj.customer,
-        shop=obj.shop  # ✅ مستقیماً از فیلد shop مدل Appointment استفاده می‌کنیم
+        shop=obj.shop  
     ).count()
 
-# for mobile
-class CustomerProfileDetailSerializer(serializers.Serializer): ###
+class CustomerProfileDetailSerializer(serializers.Serializer): 
     customer_id = serializers.IntegerField()
     nickname = serializers.CharField()
     phone = serializers.CharField()
@@ -53,26 +52,24 @@ class CustomerProfileDetailSerializer(serializers.Serializer): ###
     total_pending = serializers.IntegerField()
 
     latest_pending = serializers.DictField(allow_null=True)
-# for mobile
 
 class AppointmentSerializer(serializers.ModelSerializer):
-    # barber_name = serializers.CharField(source='barber.get_full_name', read_only=True)
     barber_name = serializers.SerializerMethodField()
     barber_id = serializers.CharField(source='barber.id', read_only=True)
-    # status_barber = serializers.CharField(source='barber.status_barber', read_only=True)
     customer_name = serializers.CharField(source='customer.get_full_name', read_only=True)
-    # تاریخ شمسی و ساعت لوکال
     j_start_date = serializers.SerializerMethodField()
     start_time_str = serializers.SerializerMethodField()
     end_time_str = serializers.SerializerMethodField()
-    is_expired=serializers.SerializerMethodField()
+    # is_expired = serializers.BooleanField(read_only=True)
+    is_expired = serializers.SerializerMethodField()
+
+
     class Meta:
         model = Appointment
         fields = [
             'id',
             'barber_name',
             'barber_id',
-            # 'status_barber',
             'customer_name',
             'status',
             'start_time',
@@ -90,7 +87,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
         full_name = barber_user.get_full_name() or barber_user.username
 
-        # 👈 اینجا اصلاح اصلی
         try:
             barber_profile = barber_user.barber_profile
         except BarberProfile.DoesNotExist:
@@ -99,7 +95,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
         if barber_profile.shop_id == obj.shop_id and barber_profile.status_barber == "invited" :
             return f"{full_name} (آرایشگر دعوت شده)"
 
-        # اگر دیگه به این آرایشگاه وصل نیست
         if barber_profile.shop_id != obj.shop_id:
             return f"{full_name} (آرایشگر سابق)"
 
@@ -115,36 +110,31 @@ class AppointmentSerializer(serializers.ModelSerializer):
     def get_end_time_str(self, obj):
         local_time = timezone.localtime(obj.end_time)
         return local_time.strftime('%H:%M')
-
     
     def get_is_expired(self, obj):
-
-        if obj.status != 'pending':
+        if obj.status not in [
+            AppointmentStatus.PENDING,
+            AppointmentStatus.CONFIRMED
+        ]:
             return False
 
-        now = timezone.localtime()
+        return obj.is_past
 
-        # اگر تاریخ قبل از امروز باشد → قطعاً منقضی شده
-        if obj.start_time.date() < now.date():
-            return True
+    
 
-        # اگر دقیقاً امروز است → ساعت را مقایسه کن
-        if obj.start_time.date() == now.date():
-            if obj.end_time <= now:
-                return True
-
-        return False
-
-class AppointmentDetailSerializer(serializers.ModelSerializer): ###
+class AppointmentDetailSerializer(serializers.ModelSerializer): 
     customer_name = serializers.SerializerMethodField()
     barber_name = serializers.SerializerMethodField()
     services = serializers.SerializerMethodField()
     total_price = serializers.SerializerMethodField()
+    total_duration = serializers.SerializerMethodField()
     status_display = serializers.SerializerMethodField()
     jalali_date = serializers.SerializerMethodField()
     start_time_str = serializers.SerializerMethodField()
     end_time_str = serializers.SerializerMethodField()
+    available_transitions = serializers.SerializerMethodField()
     canceled_by_display = serializers.SerializerMethodField()
+    # is_expired = serializers.BooleanField(read_only=True)
     is_expired = serializers.SerializerMethodField()
     can_cancel = serializers.SerializerMethodField()
     class Meta:
@@ -155,15 +145,25 @@ class AppointmentDetailSerializer(serializers.ModelSerializer): ###
             'barber_name',
             'services',
             'total_price',
+            'total_duration',
             'status_display',
             'jalali_date',
             'start_time_str',
             'end_time_str',
+            'available_transitions',
             'status',
             'canceled_by_display',
             'is_expired',
             'can_cancel'
         ]
+    
+    def get_available_transitions(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return []
+
+        return obj.get_allowed_transitions(request.user)
+
 
     def get_customer_name(self, obj):
         return obj.customer.get_full_name() or obj.customer.username
@@ -172,10 +172,34 @@ class AppointmentDetailSerializer(serializers.ModelSerializer): ###
         return obj.barber.get_full_name() or obj.barber.username
 
     def get_services(self, obj):
-        return [s.service.name for s in obj.selected_services.all()]
-    
+        services = []
+        total_price = 0
+        total_duration = 0
+
+        for s in obj.selected_services.all():
+            price = int(s.service.price)
+
+            services.append({
+                "id": s.service.id,
+                "name": s.service.name,
+                "price": price,
+                "duration": s.service.duration,
+            })
+
+            total_price += price
+            total_duration += s.service.duration
+
+        self._total_price = total_price
+        self._total_duration = total_duration
+
+        return services
+
     def get_total_price(self, obj):
-        return sum(s.service.price for s in obj.selected_services.all())
+        return getattr(self, "_total_price", 0)
+
+    def get_total_duration(self, obj):
+        return getattr(self, "_total_duration", 0)
+
 
     def get_status_display(self, obj):
         return obj.get_status_display()
@@ -191,40 +215,31 @@ class AppointmentDetailSerializer(serializers.ModelSerializer): ###
     def get_jalali_date(self, obj):
         return j_convert_appoiment(obj.start_time)
     
-    def get_canceled_by_display(self, obj):
-      if obj.status == "canceled" and obj.canceled_by:
-          return dict(Appointment._meta.get_field("canceled_by").choices).get(obj.canceled_by)
-      return None
+    # def get_canceled_by_display(self, obj):
+    #   if obj.status == "canceled" and obj.canceled_by:
+    #       return dict(Appointment._meta.get_field("canceled_by").choices).get(obj.canceled_by)
+    #   return None
     
     def get_is_expired(self, obj):
-
-        if obj.status != 'pending':
+        if obj.status not in [
+            AppointmentStatus.PENDING,
+            AppointmentStatus.CONFIRMED
+        ]:
             return False
 
-        now = timezone.localtime()
+        return obj.is_past
 
-        # اگر تاریخ قبل از امروز باشد → قطعاً منقضی شده
-        if obj.start_time.date() < now.date():
-            return True
+    def get_canceled_by_display(self, obj):
+        if obj.status == AppointmentStatus.CANCELED and obj.canceled_by_user:
+            return obj.canceled_by_user.get_full_name() or obj.canceled_by_user.username
+        return None
 
-        # اگر دقیقاً امروز است → ساعت را مقایسه کن
-        if obj.start_time.date() == now.date():
-            if obj.end_time <= now:
-                return True
 
-        return False
-    
     def get_can_cancel(self, obj):
-        if obj.status != 'confirmed':
-            return False
+        return obj.can_cancel()
 
-        now = timezone.localtime()
-        # 1 ساعت قبل از شروع نوبت
-        cancel_deadline = obj.start_time - timedelta(hours=1)
 
-        return now < cancel_deadline
-
-class ShopSummarySerializer(serializers.ModelSerializer): ###
+class ShopSummarySerializer(serializers.ModelSerializer): 
     class Meta:
         model = Shop
         fields = [
@@ -233,7 +248,7 @@ class ShopSummarySerializer(serializers.ModelSerializer): ###
             'logo',
         ]
 
-class BarberListSerializer(serializers.ModelSerializer): ###
+class BarberListSerializer(serializers.ModelSerializer): 
     first_name = serializers.CharField(source="user.first_name")
     last_name = serializers.CharField(source="user.last_name")
     role = serializers.CharField(source="user.role")
@@ -255,7 +270,7 @@ class BarberListSerializer(serializers.ModelSerializer): ###
             status__in=['pending', 'confirmed']  # فقط نوبت‌های فعال امروز
         ).count()
 
-class BarberListAddServiceSerializer(serializers.ModelSerializer): ###
+class BarberListAddServiceSerializer(serializers.ModelSerializer): 
     
     name = serializers.SerializerMethodField()
     class Meta:
@@ -265,7 +280,7 @@ class BarberListAddServiceSerializer(serializers.ModelSerializer): ###
         return obj.user.nickname() or obj.user.username
 
 
-class ServiceListSerializer(serializers.ModelSerializer): ###
+class ServiceListSerializer(serializers.ModelSerializer): 
     barber = serializers.SerializerMethodField()
     class Meta:
         model = Service
@@ -286,7 +301,7 @@ class ServiceListSerializer(serializers.ModelSerializer): ###
             }
         return None
 
-class ServiceCreateUpdateSerializer(serializers.ModelSerializer): ###
+class ServiceCreateUpdateSerializer(serializers.ModelSerializer): 
     barber = serializers.PrimaryKeyRelatedField(
         queryset=BarberProfile.objects.all(),
         write_only=True
@@ -314,8 +329,7 @@ class ServiceCreateUpdateSerializer(serializers.ModelSerializer): ###
             }
         return None
 
-# update shop
-class ShopUpdateSerializer(serializers.ModelSerializer): ###
+class ShopUpdateSerializer(serializers.ModelSerializer): 
     class Meta:
         model = Shop
         fields = ['name', 'address', 'phone']
@@ -325,19 +339,19 @@ class ShopUpdateSerializer(serializers.ModelSerializer): ###
             'phone': {'required': False},
         }
 
-class ShopLogoUpdateSerializer(serializers.ModelSerializer): ###
+class ShopLogoUpdateSerializer(serializers.ModelSerializer): 
     class Meta:
         model = Shop
         fields = ['logo']
         extra_kwargs = {
             'logo': {'required': True},
         }
-class ShopImageSerializer(serializers.ModelSerializer): ###
+class ShopImageSerializer(serializers.ModelSerializer): 
     class Meta:
         model = Shop
         fields = ['image_shop']
 
-class ShopDetailSerializer(serializers.ModelSerializer): ###
+class ShopDetailSerializer(serializers.ModelSerializer): 
     full_address = serializers.SerializerMethodField()
 
     class Meta:
@@ -346,8 +360,8 @@ class ShopDetailSerializer(serializers.ModelSerializer): ###
     def get_full_address(self, obj):
         return obj.get_full_address()
 
-# set scheduls works barbers:
-class BarberDailyScheduleSerializer(serializers.ModelSerializer): ###
+
+class BarberDailyScheduleSerializer(serializers.ModelSerializer): 
     label = serializers.SerializerMethodField()
 
     class Meta:
@@ -362,7 +376,7 @@ class BarberDailyScheduleSerializer(serializers.ModelSerializer): ###
     def get_label(self, obj):
         return dict(BarberSchedule.DAY_CHOICES).get(obj.day_of_week)
 
-class BarberFullScheduleSerializer(serializers.Serializer): ###
+class BarberFullScheduleSerializer(serializers.Serializer): 
     schedule = serializers.ListField()
 
     def update(self, instance, validated_data):
@@ -387,7 +401,6 @@ class BarberFullScheduleSerializer(serializers.Serializer): ###
                 schedule_obj.break_start = None
                 schedule_obj.break_end = None
 
-            # 🔥 مدل clean() را صدا می‌زنیم و خطاها را تبدیل به DRF error می‌کنیم
             try:
                 schedule_obj.clean()
                 schedule_obj.save()
@@ -408,37 +421,28 @@ class BarberAppointmentStatsSerializer(serializers.Serializer):
     today_count = serializers.IntegerField()
 
 
-class BarberProfileDetailSerializer(serializers.ModelSerializer): ###
-    # اطلاعات یوزر
+class BarberProfileDetailSerializer(serializers.ModelSerializer): 
     first_name = serializers.CharField(source="user.first_name")
     last_name = serializers.CharField(source="user.last_name")
     phone = serializers.CharField(source="user.phone")
     email = serializers.CharField(source="user.email")
     date_joined_jalali = serializers.SerializerMethodField()
-
-
     appointments_stats = serializers.SerializerMethodField()
-
     avatar = serializers.SerializerMethodField()
     
     class Meta:
         model = BarberProfile
         fields = [
             "id",
-            # "status",
             "status_barber",
             "avatar",
             "bio",
             "shop",
-
-            # user info
             "first_name",
             "last_name",
             "phone",
             "email",
             "date_joined_jalali",
-
-            # stats
             "appointments_stats",
         ]
 
@@ -465,19 +469,20 @@ class BarberProfileDetailSerializer(serializers.ModelSerializer): ###
 
         return BarberAppointmentStatsSerializer(data).data
 
-# get list provinces and cities:
-class ProvinceSerializer(serializers.ModelSerializer): ###
+# get list provinces:
+class ProvinceSerializer(serializers.ModelSerializer): 
     class Meta:
         model = Province
         fields = ["id", "name"]
 
-class CitySerializer(serializers.ModelSerializer): ###
+# get list cities:
+class CitySerializer(serializers.ModelSerializer): 
     class Meta:
         model = City
         fields = ["id", "name", "province"]
 
 # create shop
-class ShopCreateSerializer(serializers.ModelSerializer): ###
+class ShopCreateSerializer(serializers.ModelSerializer): 
     province_id = serializers.IntegerField(write_only=True)
     city_id = serializers.IntegerField(write_only=True)
     district_id = serializers.IntegerField(required=False, allow_null=True, write_only=True)
@@ -499,11 +504,12 @@ class ShopCreateSerializer(serializers.ModelSerializer): ###
         province_id = attrs.get("province_id")
         city_id = attrs.get("city_id")
 
-        # city must belong to province
+
         if not City.objects.filter(id=city_id, province_id=province_id).exists():
             raise serializers.ValidationError("شهر انتخاب شده متعلق به این استان نیست.")
-
+        
         district_id = attrs.get("district_id")
+
         if district_id:
             if not District.objects.filter(id=district_id, city_id=city_id).exists():
                 raise serializers.ValidationError("منطقه انتخاب شده متعلق به این شهر نیست.")
